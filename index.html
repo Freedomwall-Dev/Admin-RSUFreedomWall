@@ -1,0 +1,2688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Imperial Command Center - FreedomWall Admin</title>
+    <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.png">
+    <link rel="manifest" href="/images/site.webmanifest">
+    <meta name="theme-color" content="#1a1a1a">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script type="importmap">
+    {
+      "imports": {
+        "firebase/app": "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js",
+        "firebase/firestore": "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js",
+        "firebase/auth": "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js"
+      }
+    }
+    </script>
+    <style>
+        :root {
+            font-size: 16px; /* Base font size for rem units */
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #2a0a0a 100%);
+            color: #e0e0e0;
+            min-height: 100vh;
+            overflow-x: hidden; /* Prevent horizontal scroll */
+        }
+
+        /* Login Screen */
+        .login-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: 
+                radial-gradient(circle at 20% 20%, rgba(255, 0, 0, 0.1) 0%, transparent 40%),
+                radial-gradient(circle at 80% 80%, rgba(255, 0, 0, 0.05) 0%, transparent 40%),
+                linear-gradient(135deg, #000000 0%, #1a0505 100%);
+            padding: 1rem; /* Add padding for smaller screens */
+        }
+
+        .login-card {
+            background: rgba(20, 20, 20, 0.9);
+            border: 2px solid #ff0000;
+            border-radius: 15px;
+            padding: 2rem; /* Adjusted padding for smaller screens */
+            text-align: center;
+            box-shadow: 
+                0 0 30px rgba(255, 0, 0, 0.3),
+                inset 0 0 20px rgba(255, 0, 0, 0.05);
+            max-width: 400px;
+            width: 100%;
+            margin: 1rem; /* Adjusted margin */
+        }
+
+        .imperial-logo {
+            font-size: 2.5rem; /* Adjusted for smaller screens */
+            color: #ff0000;
+            margin-bottom: 0.8rem;
+            text-shadow: 0 0 20px rgba(255, 0, 0, 0.8);
+        }
+
+        .login-title {
+            color: #ff0000;
+            font-size: 1.6rem; /* Adjusted for smaller screens */
+            margin-bottom: 0.4rem;
+            text-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
+        }
+
+        .login-subtitle {
+            color: #888;
+            margin-bottom: 1.5rem; /* Adjusted margin */
+            font-style: italic;
+            font-size: 0.9rem; /* Adjusted font size */
+        }
+
+        .btn-imperial {
+            background: linear-gradient(45deg, #ff0000, #cc0000);
+            color: white;
+            border: none;
+            padding: 0.8rem 1.5rem; /* Adjusted padding for touch targets */
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem; /* Adjusted font size */
+            font-weight: bold;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 4px 15px rgba(255, 0, 0, 0.3);
+            width: 100%; /* Full width on small screens */
+            max-width: 300px; /* Max width for larger screens */
+        }
+
+        .btn-imperial:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 0, 0, 0.5);
+            background: linear-gradient(45deg, #ff3333, #ff0000);
+        }
+
+        /* Main Admin Interface */
+        .admin-container {
+            display: none;
+            min-height: 100vh;
+            flex-direction: column; /* Default to column for mobile-first */
+        }
+
+        .admin-header {
+            background: linear-gradient(90deg, #000000, #330000);
+            border-bottom: 2px solid #ff0000;
+            padding: 1rem; /* Adjusted padding */
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(255, 0, 0, 0.3);
+            position: sticky; /* Keep header visible */
+            top: 0;
+            z-index: 100;
+        }
+
+        .admin-title {
+            color: #ff0000;
+            font-size: 1.2rem; /* Adjusted for smaller screens */
+            font-weight: bold;
+            text-shadow: 0 0 10px rgba(255, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-grow: 1; /* Allow title to take space */
+            justify-content: center; /* Center title on mobile */
+        }
+
+        .admin-info {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem; /* Adjusted gap */
+        }
+
+        .admin-user {
+            color: #e0e0e0;
+            font-size: 0.8rem; /* Adjusted font size */
+        }
+
+        .btn-logout {
+            background: rgba(255, 0, 0, 0.2);
+            border: 1px solid #ff0000;
+            color: #ff0000;
+            padding: 0.4rem 0.8rem; /* Adjusted padding */
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.8rem; /* Adjusted font size */
+        }
+
+        .btn-logout:hover {
+            background: rgba(255, 0, 0, 0.4);
+        }
+
+        .admin-main {
+            display: flex;
+            flex-direction: column; /* Default to column for mobile-first */
+            min-height: calc(100vh - 60px); /* Adjusted for header height */
+        }
+
+        .admin-sidebar {
+            width: 100%; /* Full width on mobile */
+            background: linear-gradient(180deg, #111111, #220000);
+            border-right: none; /* No border on mobile */
+            padding: 1rem 0; /* Adjusted padding */
+            position: fixed; /* Fixed position for mobile menu */
+            top: 60px; /* Below header */
+            left: -100%; /* Hidden by default */
+            height: calc(100vh - 60px); /* Full height minus header */
+            transition: left 0.3s ease;
+            z-index: 100;
+            overflow-y: auto; /* Enable scrolling for many nav items */
+        }
+
+        .admin-sidebar.open {
+            left: 0; /* Slide in */
+        }
+
+        .sidebar-nav {
+            list-style: none;
+        }
+
+        .sidebar-nav li {
+            border-bottom: 1px solid rgba(255, 0, 0, 0.1);
+        }
+
+        .sidebar-nav a {
+            display: block;
+            padding: 0.8rem 1.5rem; /* Adjusted padding for touch targets */
+            color: #e0e0e0;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border-left: 3px solid transparent;
+            font-size: 0.95rem; /* Adjusted font size */
+        }
+
+        .sidebar-nav a:hover,
+        .sidebar-nav a.active {
+            background: rgba(255, 0, 0, 0.1);
+            border-left-color: #ff0000;
+            color: #ff0000;
+        }
+
+        .admin-content {
+            flex: 1;
+            padding: 1rem; /* Adjusted padding */
+            overflow-y: auto;
+        }
+
+        .section {
+            display: none;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        /* Dashboard Cards */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr; /* Stack on mobile */
+            gap: 1rem; /* Adjusted gap */
+            margin-bottom: 1.5rem; /* Adjusted margin */
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #1a1a1a, #330000);
+            border: 1px solid #ff0000;
+            border-radius: 10px;
+            padding: 1rem; /* Adjusted padding */
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(255, 0, 0, 0.1);
+        }
+
+        .stat-number {
+            font-size: 2rem; /* Adjusted for smaller screens */
+            font-weight: bold;
+            color: #ff0000;
+            text-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
+        }
+
+        .stat-label {
+            color: #888;
+            font-size: 0.8rem; /* Adjusted font size */
+            margin-top: 0.4rem;
+        }
+
+        /* Search and Controls */
+        .controls-section {
+            background: rgba(30, 30, 30, 0.8);
+            border: 1px solid #ff0000;
+            border-radius: 10px;
+            padding: 1rem; /* Adjusted padding */
+            margin-bottom: 1.5rem; /* Adjusted margin */
+        }
+
+        .search-container {
+            display: flex;
+            flex-direction: column; /* Stack on mobile */
+            gap: 0.8rem; /* Adjusted gap */
+            margin-bottom: 0.8rem;
+            flex-wrap: wrap;
+        }
+
+        .search-input {
+            flex: 1;
+            background: #1a1a1a;
+            border: 1px solid #ff0000;
+            border-radius: 5px;
+            padding: 0.6rem; /* Adjusted padding */
+            color: #e0e0e0;
+            min-width: unset; /* Remove min-width for mobile */
+            width: 100%; /* Full width */
+            font-size: 0.9rem; /* Adjusted font size */
+        }
+
+        .search-input:focus {
+            outline: none;
+            box-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
+        }
+
+        .btn-dark {
+            background: #1a1a1a;
+            border: 1px solid #ff0000;
+            color: #ff0000;
+            padding: 0.6rem 1.2rem; /* Adjusted padding for touch targets */
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem; /* Adjusted font size */
+            width: 100%; /* Full width on small screens */
+        }
+
+        .btn-dark:hover {
+            background: rgba(255, 0, 0, 0.1);
+        }
+
+        .btn-danger {
+            background: linear-gradient(45deg, #ff0000, #cc0000);
+            color: white;
+            border: none;
+            padding: 0.6rem 1.2rem; /* Adjusted padding for touch targets */
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem; /* Adjusted font size */
+            width: 100%; /* Full width on small screens */
+        }
+
+        .btn-danger:hover {
+            background: linear-gradient(45deg, #ff3333, #ff0000);
+        }
+
+        /* Notes Display */
+        .notes-grid {
+            display: grid;
+            grid-template-columns: 1fr; /* Stack on mobile */
+            gap: 0.8rem; /* Adjusted gap */
+            margin-top: 0.8rem;
+        }
+
+        .admin-note-card {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 10px;
+            padding: 0.8rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 220px;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+
+        .admin-note-card:hover {
+            border-color: #ff0000;
+            box-shadow: 0 4px 15px rgba(255, 0, 0, 0.2);
+        }   
+
+        .admin-note-card.selected {
+            border-color: #ff0000;
+            background: rgba(255, 0, 0, 0.05);
+        }
+
+        .admin-note-card.admin-note {
+            border: 2px solid #ff0000;  /* keep imperial border */
+            box-shadow: 0 0 12px rgba(255, 0, 0, 0.3);
+        }
+
+
+        .note-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.4rem;
+        }
+
+        .note-badge {
+            background: #ff0000;
+            color: white;
+            padding: 0.15rem 0.4rem; /* Adjusted padding */
+            border-radius: 3px;
+            font-size: 0.65rem; /* Adjusted font size */
+            font-weight: bold;
+        }
+
+        .note-checkbox {
+            accent-color: #ff0000;
+            transform: scale(1.2); /* Make checkbox larger for touch */
+        }
+
+        .note-message {
+            flex-grow: 1;
+            font-size: 0.95rem;
+            line-height: 1.4;
+            word-break: break-word;
+            overflow-wrap: anywhere;
+            white-space: pre-wrap;
+            display: -webkit-box;
+            -webkit-line-clamp: 5;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            padding-right: 4px;
+        }
+
+        .admin-note-card.is-expanded .note-message {
+            -webkit-line-clamp: unset;
+            overflow: visible;
+            display: block;
+        }
+
+        .see-more-btn {
+            display: none;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 0.78rem;
+            font-weight: 500;
+            padding: 0;
+            margin-top: 2px;
+            color: inherit;
+            opacity: 0.75;
+            line-height: 1.5;
+        }
+        .see-more-btn:hover { opacity: 1; }
+
+        /* Only show when card has overflowing text */
+        .admin-note-card.is-overflowing .see-more-btn {
+            display: block;
+        }
+
+        .note-bottom {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 0.5rem;
+            padding-top: 0.4rem;
+            border-top: 1px solid rgba(128,128,128,0.2);
+            font-size: 0.75rem;
+            opacity: 0.75;
+        }
+
+        .view-counter {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .note-reaction-admin {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .note-deleted-badge {
+            background: rgba(255,0,0,0.15);
+            border: 1px solid #ff0000;
+            color: #ff6666;
+            font-size: 0.65rem;
+            font-weight: bold;
+            padding: 0.1rem 0.35rem;
+            border-radius: 3px;
+            text-transform: uppercase;
+        }
+
+
+        
+        @media (max-width: 600px) {
+        .notes-grid {
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+        .admin-note-card {
+            height: auto; /* allow flexible height on very small screens */
+            min-height: 180px;
+        }
+        }
+
+        .note-meta {
+            font-size: 0.75rem; /* Adjusted font size */
+            color: #1f1f1f;
+            margin-top: 0.5rem; /* Adjusted margin */
+            line-height: 1.3; /* Improve readability */
+        }
+
+        .note-meta div {
+            margin-bottom: 0.2rem; /* Space between meta lines */
+        }
+
+        .note-actions {
+            display: flex;
+            gap: 0.4rem; /* Adjusted gap */
+            justify-content: flex-end;
+            flex-wrap: wrap; /* Allow buttons to wrap */
+            margin-top: 0.5rem; /* Space from meta info */
+        }
+
+        .btn-small {
+            padding: 0.3rem 0.6rem;
+            font-size: 0.75rem; /* Adjusted font size */
+            border-radius: 3px;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+            padding: 1rem; /* Add padding for smaller screens */
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #1a1a1a, #330000);
+            margin: 5vh auto; /* Adjusted margin for better vertical centering on mobile */
+            padding: 1.5rem; /* Adjusted padding */
+            border: 2px solid #ff0000;
+            border-radius: 15px;
+            width: 100%; /* Full width on mobile */
+            max-width: 500px;
+            box-shadow: 0 0 30px rgba(255, 0, 0, 0.5);
+        }
+
+        .modal-title {
+            color: #ff0000;
+            margin-bottom: 0.8rem;
+            text-align: center;
+            text-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
+            font-size: 1.4rem; /* Adjusted font size */
+        }
+
+        .form-group {
+            margin-bottom: 0.8rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.4rem;
+            color: #e0e0e0;
+            font-weight: bold;
+            font-size: 0.9rem; /* Adjusted font size */
+        }
+
+        .form-input, .form-textarea, .form-select {
+            width: 100%;
+            background: #0a0a0a;
+            border: 1px solid #ff0000;
+            border-radius: 5px;
+            padding: 0.6rem; /* Adjusted padding */
+            color: #e0e0e0;
+            font-size: 0.9rem; /* Adjusted font size */
+        }
+
+        .form-input:focus, .form-textarea:focus, .form-select:focus {
+            outline: none;
+            box-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
+        }
+
+        .form-textarea {
+            resize: vertical;
+            min-height: 80px; /* Adjusted min-height */
+        }
+
+        /* Color picker specific styles (for custom swatches) */
+        .color-swatch {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%; /* Make them round */
+            border: 2px solid transparent;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 0 5px rgba(0,0,0,0.3);
+        }
+
+        .color-swatch:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
+        }
+
+        .color-swatch.selected {
+            border-color: #ff0000; /* Imperial red border for selected */
+            box-shadow: 0 0 15px rgba(255, 0, 0, 0.7);
+            transform: scale(1.05);
+        }
+
+
+        /* Ban Duration Controls */
+        .ban-duration-controls {
+            display: flex;
+            gap: 0.6rem; /* Adjusted gap */
+            margin-bottom: 0.8rem;
+            flex-wrap: wrap;
+        }
+
+        .duration-preset {
+            background: #1a1a1a;
+            border: 1px solid #ff0000;
+            color: #ff0000;
+            padding: 0.4rem 0.8rem; /* Adjusted padding */
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.8rem; /* Adjusted font size */
+            flex-grow: 1; /* Allow items to grow */
+            min-width: 80px; /* Ensure minimum width */
+        }
+
+        .duration-preset:hover,
+        .duration-preset.selected {
+            background: rgba(255, 0, 0, 0.2);
+            box-shadow: 0 0 10px rgba(255, 0, 0, 0.3);
+        }
+
+        .custom-duration {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+            width: 100%; /* Full width on mobile */
+        }
+
+        .custom-duration input, .custom-duration select {
+            flex: 1; /* Allow inputs to take available space */
+            width: auto; /* Override inline style */
+        }
+
+        /* Bulk Actions */
+        .bulk-actions {
+            background: rgba(255, 0, 0, 0.1);
+            border: 1px solid #ff0000;
+            border-radius: 8px;
+            padding: 0.8rem; /* Adjusted padding */
+            margin-bottom: 1rem;
+            display: none;
+        }
+
+        .bulk-actions.show {
+            display: block;
+        }
+
+        .selected-count {
+            color: #ff0000;
+            font-weight: bold;
+            margin-bottom: 0.4rem;
+            font-size: 0.9rem; /* Adjusted font size */
+        }
+
+        /* Loading and States */
+        .loading {
+            text-align: center;
+            padding: 1.5rem; /* Adjusted padding */
+            color: #888;
+            font-size: 0.9rem; /* Adjusted font size */
+        }
+
+        .spinner {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Toast Notifications */
+        .toast {
+            position: fixed;
+            top: 1rem; /* Adjusted for mobile */
+            right: 1rem; /* Adjusted for mobile */
+            background: #1a1a1a;
+            border: 1px solid #ff0000;
+            color: #e0e0e0;
+            padding: 0.8rem 1.2rem; /* Adjusted padding */
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(255, 0, 0, 0.3);
+            transform: translateX(150%); /* Off-screen */
+            transition: transform 0.3s ease;
+            z-index: 2000;
+            max-width: calc(100% - 2rem); /* Max width for mobile */
+            font-size: 0.9rem; /* Adjusted font size */
+        }
+
+        .toast.show {
+            transform: translateX(0);
+        }
+
+        .toast.error {
+            border-color: #ff6b6b;
+            background: #2a1010;
+        }
+
+        .toast.success {
+            border-color: #00ff00;
+            background: #102010;
+        }
+
+        /* Imperial styling for special elements */
+        .imperial-accent {
+            color: #ff0000;
+            text-shadow: 0 0 5px rgba(255, 0, 0, 0.5);
+            font-size: 1.3rem; /* Adjusted for smaller screens */
+            margin-bottom: 1rem;
+        }
+
+        .data-row:nth-child(even) {
+            background: rgba(255, 0, 0, 0.02);
+        }
+
+        .data-row:hover {
+            background: rgba(255, 0, 0, 0.05);
+        }
+
+        /* Special admin note styling */
+        .admin-note .note-message {
+            font-weight: bold;
+            color: #ff0000;
+            text-shadow: 0 0 5px rgba(255, 0, 0, 0.3);
+        }
+
+        /* Activity Log Styles */
+        .activity-log {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 8px;
+            max-height: 500px; /* Adjusted max-height for mobile */
+            overflow-y: auto;
+        }
+
+        .log-entry {
+            padding: 0.6rem 0.8rem; /* Adjusted padding */
+            border-bottom: 1px solid #333;
+            font-size: 0.85rem; /* Adjusted font size */
+        }
+
+        .log-entry:last-child {
+            border-bottom: none;
+        }
+
+        .log-time {
+            color: #888;
+            font-size: 0.75rem; /* Adjusted font size */
+        }
+
+        .log-action {
+            color: #ff0000;
+            font-weight: bold;
+        }
+
+        /* Ban Management */
+        .ban-list {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .ban-item {
+            padding: 0.8rem; /* Adjusted padding */
+            border-bottom: 1px solid #333;
+            display: flex;
+            flex-direction: column; /* Stack on mobile */
+            align-items: flex-start; /* Align items to start */
+            gap: 0.5rem; /* Add gap */
+        }
+
+        .ban-item:last-child {
+            border-bottom: none;
+        }
+
+        .ban-info {
+            flex: 1;
+            width: 100%; /* Full width */
+        }
+
+        .ban-device-id {
+            font-family: monospace;
+            color: #ff0000;
+            font-weight: bold;
+            font-size: 0.9rem; /* Adjusted font size */
+        }
+
+        .ban-details {
+            font-size: 0.75rem; /* Adjusted font size */
+            color: #888;
+            margin-top: 0.2rem;
+        }
+
+        .btn-unban {
+            background: linear-gradient(45deg, #00ff00, #00cc00);
+            color: #000;
+            border: none;
+            padding: 0.4rem 0.8rem; /* Adjusted padding */
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            font-size: 0.8rem; /* Adjusted font size */
+            width: 100%; /* Full width on mobile */
+        }
+
+        .btn-unban:hover {
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+        }
+
+        /* Hide scrollbar but keep functionality */
+        .activity-log::-webkit-scrollbar,
+        .admin-content::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .activity-log::-webkit-scrollbar-track,
+        .admin-content::-webkit-scrollbar-track {
+            background: #1a1a1a;
+        }
+
+        .activity-log::-webkit-scrollbar-thumb,
+        .admin-content::-webkit-scrollbar-thumb {
+            background: #ff0000;
+            border-radius: 3px;
+        }
+
+        .activity-log::-webkit-scrollbar-thumb:hover,
+        .admin-content::-webkit-scrollbar-thumb:hover {
+            background: #ff3333;
+        }
+
+        /* Mobile Menu Toggle Button */
+        .mobile-menu-toggle {
+            display: none; /* Hidden by default, shown in media query */
+            background: none;
+            border: none;
+            color: #ff0000;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0.5rem;
+            order: -1; /* Move to the left */
+        }
+
+        /* Media Queries */
+        /* Small devices (phones, 600px and down) */
+        @media (max-width: 600px) {
+            .admin-header {
+                padding: 0.8rem;
+                justify-content: space-between; /* Ensure space between toggle and info */
+            }
+            .admin-title {
+                font-size: 1.1rem;
+                flex-grow: 0; /* Don't grow to center */
+                margin-left: auto; /* Push to center if space allows */
+                margin-right: auto;
+            }
+            .admin-user {
+                display: none; /* Hide email on very small screens */
+            }
+            .btn-logout {
+                padding: 0.3rem 0.6rem;
+                font-size: 0.75rem;
+            }
+            .mobile-menu-toggle {
+                display: block; /* Show hamburger menu */
+            }
+            .admin-sidebar {
+                top: 75px; /* Adjust for smaller header */
+                height: calc(100vh - 75px);
+            }
+            .admin-main {
+                min-height: calc(100vh - 75px);
+            }
+            .login-card {
+                padding: 1.5rem;
+            }
+            .login-title {
+                font-size: 1.4rem;
+            }
+            .login-subtitle {
+                font-size: 0.85rem;
+            }
+            .btn-imperial {
+                padding: 0.7rem 1.2rem;
+                font-size: 0.9rem;
+            }
+            .modal-content {
+                margin: 2vh auto;
+                padding: 1rem;
+            }
+            .modal-title {
+                font-size: 1.2rem;
+            }
+            .form-input, .form-textarea, .form-select {
+                font-size: 0.85rem;
+            }
+            .duration-preset {
+                font-size: 0.75rem;
+                padding: 0.3rem 0.6rem;
+            }
+            .custom-duration input, .custom-duration select {
+                font-size: 0.85rem;
+            }
+        }
+
+        /* Medium devices (tablets, 768px and up) */
+        @media (min-width: 768px) {
+            .admin-sidebar {
+                width: 250px;
+                position: fixed;
+                top: 70px;        /* 👈 start below header */
+                left: 0;
+                bottom: 0;
+                height: calc(100vh - 60px); /* full height minus header */
+                border-right: 2px solid #ff0000;
+                padding: 2rem 0;
+                overflow-y: auto; /* scroll if sidebar items overflow */
+                background: linear-gradient(180deg, #111111, #220000); /* keep background */
+            }
+            
+            .mobile-menu-toggle {
+                display: none; /* Hide hamburger menu */
+            }
+
+            .admin-header {
+                padding: 1rem 2rem; /* Original padding */
+            }
+
+            .admin-title {
+                font-size: 1.5rem; /* Original font size */
+                flex-grow: 1; /* Allow title to grow */
+                justify-content: flex-start; /* Align to start */
+            }
+
+            .admin-user {
+                display: inline; /* Show email */
+            }
+
+            .btn-logout {
+                padding: 0.5rem 1rem; /* Original padding */
+                font-size: 0.9rem; /* Original font size */
+            }
+
+            .admin-content {
+                margin-left: 250px;  /* leave space for sidebar */
+                padding: 2rem;
+                flex: 1;
+                overflow-y: auto;
+                max-height: calc(100vh - 60px); /* match height below header */
+            }
+
+            .dashboard-grid {
+                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); /* Original grid */
+                gap: 1.5rem;
+            }
+
+            .notes-grid {
+                grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); /* Original grid */
+                gap: 1rem;
+            }
+
+            .admin-note-card {
+                min-height: unset; /* Remove min-height on larger screens */
+            }
+
+            .search-container {
+                flex-direction: row; /* Row layout for search */
+            }
+
+            .search-input {
+                min-width: 200px; /* Original min-width */
+                width: auto; /* Allow flex to manage width */
+            }
+
+            .btn-dark, .btn-danger {
+                width: auto; /* Allow flex to manage width */
+            }
+
+            .ban-item {
+                flex-direction: row; /* Row layout for ban items */
+                align-items: center;
+            }
+
+            .btn-unban {
+                width: auto; /* Allow flex to manage width */
+            }
+
+            .imperial-accent {
+                font-size: 1.5rem; /* Original font size */
+            }
+
+            .stat-number {
+                font-size: 2.5rem; /* Original font size */
+            }
+
+            .stat-label {
+                font-size: 0.9rem; /* Original font size */
+            }
+
+            .note-message {
+                font-size: 1rem; /* Original font size */
+            }
+
+            .note-meta {
+                font-size: 0.8rem; /* Original font size */
+            }
+
+            .form-input, .form-textarea, .form-select {
+                font-size: 1rem; /* Original font size */
+            }
+
+            .duration-preset {
+                font-size: 0.9rem; /* Original font size */
+            }
+
+            .custom-duration {
+                width: auto; /* Allow flex to manage width */
+            }
+            .custom-duration input, .custom-duration select {
+                width: 100px; /* Original width */
+            }
+        }
+
+        /* Large devices (desktops, 1024px and up) - mostly for consistency, already covered by 768px+ */
+        @media (min-width: 1024px) {
+            /* No specific changes needed as 768px+ covers desktop layout */
+        }
+    </style>
+</head>
+<body>
+    <!-- Toast Notification -->
+    <div id="toast" class="toast">
+        <span class="toast-message"></span>
+    </div>
+
+    <!-- Login Screen -->
+    <div id="loginContainer" class="login-container">
+        <div class="login-card">
+            <div class="imperial-logo">
+                <i class="fab fa-empire"></i>
+            </div>
+            <h1 class="login-title">Imperial Command Center</h1>
+            <p class="login-subtitle">"Your lack of faith is disturbing"</p>
+            <button id="loginBtn" class="btn-imperial">
+                <i class="fab fa-google"></i> Access the Death Star
+            </button>
+        </div>
+    </div>
+
+    <!-- Admin Interface -->
+    <div id="adminContainer" class="admin-container">
+        <header class="admin-header">
+            <button class="mobile-menu-toggle" id="mobileMenuToggle">
+                <i class="fas fa-bars"></i>
+            </button>
+            <h1 class="admin-title">
+                <i class="fab fa-empire"></i> Imperial Command Center
+            </h1>
+            <div class="admin-info">
+                <span class="admin-user">Lord <span id="adminEmail"></span></span>
+                <button id="logoutBtn" class="btn-logout">
+                    <i class="fas fa-sign-out-alt"></i> Leave the Empire
+                </button>
+            </div>
+        </header>
+
+        <div class="admin-main">
+            <aside class="admin-sidebar">
+                <nav>
+                    <ul class="sidebar-nav">
+                        <li><a href="#dashboard" class="nav-link active">
+                            <i class="fas fa-tachometer-alt"></i> Death Star Status
+                        </a></li>
+                        <li><a href="#notes" class="nav-link">
+                            <i class="fas fa-scroll"></i> Imperial Messages
+                        </a></li>
+                        <li><a href="#users" class="nav-link">
+                            <i class="fas fa-users"></i> Rebel Management
+                        </a></li>
+                        <li><a href="#analytics" class="nav-link">
+                            <i class="fas fa-chart-line"></i> Intelligence Reports
+                        </a></li>
+                        <li><a href="#logs" class="nav-link">
+                            <i class="fas fa-clipboard-list"></i> Imperial Logs
+                        </a></li>
+                    </ul>
+                </nav>
+            </aside>
+
+            <main class="admin-content">
+                <!-- Dashboard Section -->
+                <section id="dashboard" class="section active">
+                    <h2 class="imperial-accent">Death Star Command Dashboard</h2>
+                    <div class="dashboard-grid">
+                        <div class="stat-card">
+                            <div class="stat-number" id="totalNotes">0</div>
+                            <div class="stat-label">Total Messages</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" id="todayNotes">0</div>
+                            <div class="stat-label">Today's Messages</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" id="activeUsers">0</div>
+                            <div class="stat-label">Active Rebels Today</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" id="bannedUsers">0</div>
+                            <div class="stat-label">Imprisoned Rebels</div>
+                        </div>
+                    </div>
+
+                    <div class="controls-section">
+                        <h3 class="imperial-accent">Quick Imperial Actions</h3>
+                        <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 1rem;">
+                            <button id="createAdminNote" class="btn-imperial">
+                                <i class="fas fa-plus"></i> Send Imperial Message
+                            </button>
+                            <button id="refreshDashboard" class="btn-dark">
+                                <i class="fas fa-sync"></i> Refresh Intelligence
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Notes Management Section -->
+                <section id="notes" class="section">
+                    <h2 class="imperial-accent">Imperial Message Management</h2>
+                    
+                    <div class="controls-section">
+                        <div class="search-container">
+                            <input type="text" id="searchNotes" class="search-input" placeholder="Search messages, rebels, or device IDs...">
+                            <button id="clearSearch" class="btn-dark">
+                                <i class="fas fa-times"></i> Clear
+                            </button>
+                        </div>
+                        
+                        <div id="bulkActions" class="bulk-actions">
+                            <div class="selected-count">
+                                <span id="selectedCount">0</span> messages selected
+                            </div>
+                            <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                                <button id="bulkDelete" class="btn-danger">
+                                    <i class="fas fa-trash"></i> Execute Order 66
+                                </button>
+                                <button id="deselectAll" class="btn-dark">
+                                    <i class="fas fa-times"></i> Deselect All
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="notesDisplay" class="notes-grid">
+                        <div class="loading">
+                            <i class="fas fa-spinner spinner"></i> Loading Imperial communications...
+                        </div>
+                    </div>
+                </section>
+
+                <!-- User Management Section -->
+                <section id="users" class="section">
+                    <h2 class="imperial-accent">Rebel Management Center</h2>
+                    
+                    <div class="controls-section">
+                        <h3>Imprison New Rebel</h3>
+                        <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                            <input type="text" id="banDeviceId" class="form-input" placeholder="Device ID to imprison..." style="flex: 1; min-width: 200px;">
+                            <button id="banUser" class="btn-danger">
+                                <i class="fas fa-ban"></i> Imprison Rebel
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="controls-section">
+                        <h3 class="imperial-accent">Currently Imprisoned Rebels</h3>
+                        <div id="bannedUsersList" class="ban-list">
+                            <div class="loading">
+                                <i class="fas fa-spinner spinner"></i> Loading imprisonment records...
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Analytics Section -->
+                <section id="analytics" class="section">
+                    <h2 class="imperial-accent">Intelligence Reports</h2>
+                    
+                    <div class="dashboard-grid">
+                        <div class="stat-card">
+                            <div class="stat-number" id="analyticsHourlyPosts">0</div>
+                            <div class="stat-label">Messages This Hour</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" id="analyticsTopColor">#ff595e</div>
+                            <div class="stat-label">Most Popular Color Today</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" id="analyticsAvgLength">0</div>
+                            <div class="stat-label">Avg Message Length</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" id="analyticsReactions">0</div>
+                            <div class="stat-label">Total Reactions Today</div>
+                        </div>
+                    </div>
+
+                    <div class="controls-section">
+                        <h3 class="imperial-accent">Export Imperial Data</h3>
+                        <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                            <button id="exportNotes" class="btn-dark">
+                                <i class="fas fa-download"></i> Export All Messages
+                            </button>
+                            <button id="exportBans" class="btn-dark">
+                                <i class="fas fa-download"></i> Export Ban Records
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Activity Logs Section -->
+                <section id="logs" class="section">
+                    <h2 class="imperial-accent">Imperial Activity Logs</h2>
+                    
+                    <div class="controls-section">
+                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+                            <h3>Recent Imperial Actions</h3>
+                            <button id="refreshLogs" class="btn-dark">
+                                <i class="fas fa-sync"></i> Refresh
+                            </button>
+                        </div>
+                        <div id="activityLogs" class="activity-log">
+                            <div class="loading">
+                                <i class="fas fa-spinner spinner"></i> Loading Imperial records...
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </main>
+        </div>
+    </div>
+
+    <!-- Create Admin Note Modal -->
+    <div id="adminNoteModal" class="modal">
+        <div class="modal-content">
+            <h2 class="modal-title">Send Imperial Message</h2>
+            <form id="adminNoteForm">
+                <div class="form-group">
+                    <label class="form-label">Imperial Message*</label>
+                    <textarea id="adminMessage" class="form-textarea" required maxlength="250" placeholder="Your imperial decree..."></textarea>
+                    <div style="text-align: right; color: #888; font-size: 0.8rem;">
+                        <span id="adminCharCount">0</span>/250
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Imperial Title (optional)</label>
+                    <input type="text" id="adminName" class="form-input" placeholder="Admin" maxlength="50">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Note Color</label>
+                    <div id="adminNoteColorSwatches" style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                        <button type="button" class="color-swatch" data-color="#FFEB3B" style="background-color: #FFEB3B;"></button>
+                        <button type="button" class="color-swatch" data-color="#80D8FF" style="background-color: #80D8FF;"></button>
+                        <button type="button" class="color-swatch" data-color="#A5D6A7" style="background-color: #A5D6A7;"></button>
+                        <button type="button" class="color-swatch" data-color="#FFD180" style="background-color: #FFD180;"></button>
+                        <button type="button" class="color-swatch" data-color="#FF80AB" style="background-color: #FF80AB;"></button>
+                        <button type="button" class="color-swatch" data-color="#CF93FF" style="background-color: #CF93FF;"></button>
+                        <button type="button" class="color-swatch" data-color="#FF9E80" style="background-color: #FF9E80;"></button>
+                        <!-- Default dark option -->
+                        <button type="button" class="color-swatch selected" data-color="#1a1a1a" style="background-color: #1a1a1a; border: 1px solid #ff0000;"></button>
+                    </div>
+                    <!-- Hidden input to store the selected color value -->
+                    <input type="hidden" id="adminNoteColor" value="#1a1a1a">
+                </div>
+                <div style="display: flex; gap: 1rem; justify-content: flex-end; flex-wrap: wrap;">
+                    <button type="button" id="cancelAdminNote" class="btn-dark">Cancel</button>
+                    <button type="submit" id="submitAdminNote" class="btn-imperial">
+                        <span class="btn-text">Send Imperial Message</span>
+                        <span class="btn-spinner" style="display: none;">
+                            <i class="fas fa-spinner fa-spin"></i> Sending...
+                        </span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Ban User Modal -->
+    <div id="banModal" class="modal">
+        <div class="modal-content">
+            <h2 class="modal-title">Imprison Rebel</h2>
+            <form id="banForm">
+                <div class="form-group">
+                    <label class="form-label">Device ID*</label>
+                    <input type="text" id="modalBanDeviceId" class="form-input" required placeholder="Device ID to imprison">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Imprisonment Duration</label>
+                    <div class="ban-duration-controls">
+                        <button type="button" class="duration-preset" data-duration="3600">1 Hour</button>
+                        <button type="button" class="duration-preset" data-duration="21600">6 Hours</button>
+                        <button type="button" class="duration-preset selected" data-duration="86400">1 Day</button>
+                        <button type="button" class="duration-preset" data-duration="259200">3 Days</button>
+                        <button type="button" class="duration-preset" data-duration="604800">1 Week</button>
+                        <button type="button" class="duration-preset" data-duration="permanent">Permanent</button>
+                    </div>
+                    <div class="custom-duration">
+                        <input type="number" id="customDuration" class="form-input" placeholder="Custom" min="1">
+                        <select id="customUnit" class="form-select">
+                            <option value="3600">Hours</option>
+                            <option value="86400">Days</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Reason for Imprisonment</label>
+                    <textarea id="banReason" class="form-textarea" placeholder="Imperial decree reason..." maxlength="200"></textarea>
+                </div>
+                <div style="display: flex; gap: 1rem; justify-content: flex-end; flex-wrap: wrap;">
+                    <button type="button" id="cancelBan" class="btn-dark">Cancel</button>
+                    <button type="submit" id="submitBan" class="btn-danger">
+                        <span class="btn-text">Execute Imprisonment</span>
+                        <span class="btn-spinner" style="display: none;">
+                            <i class="fas fa-spinner fa-spin"></i> Processing...
+                        </span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "firebase/app";
+        import { 
+            getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot, 
+            query, orderBy, limit, where, serverTimestamp, setDoc, getDoc,
+            getDocs, updateDoc, startAfter
+        } from "firebase/firestore";
+        import { 
+            getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged 
+        } from "firebase/auth";
+
+        // Firebase Configuration (using your existing config)
+        const firebaseConfig = {
+            apiKey: "AIzaSyDOI2I4oY9zvbQ7T56gRI8_xpqQEQBqMSk",
+            authDomain: "rsufreedomwall-3b0db.firebaseapp.com",
+            projectId: "rsufreedomwall-3b0db",
+            storageBucket: "rsufreedomwall-3b0db.firebasestorage.app",
+            messagingSenderId: "673274676472",
+            appId: "1:673274676472:web:53fc69571f3bb547cc670d",
+            measurementId: "G-4MDSWNDVEY"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+        const provider = new GoogleAuthProvider();
+
+        // Admin email
+        const ADMIN_EMAIL = 'freedomwallwebsite@gmail.com';
+
+        // Global variables
+        let currentUser = null;
+        let allNotes = [];
+        let filteredNotes = [];
+        let selectedNotes = new Set();
+        let lastVisible = null;
+
+        // Utility Functions
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('toast');
+            toast.querySelector('.toast-message').textContent = message;
+            toast.className = `toast ${type}`;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 4000);
+        }
+
+        function setButtonLoading(button, isLoading) {
+            const btnText = button.querySelector('.btn-text');
+            const btnSpinner = button.querySelector('.btn-spinner');
+            
+            if (btnText && btnSpinner) {
+                if (isLoading) {
+                    btnText.style.display = 'none';
+                    btnSpinner.style.display = 'inline-flex';
+                    button.disabled = true;
+                } else {
+                    btnText.style.display = 'inline';
+                    btnSpinner.style.display = 'none';
+                    button.disabled = false;
+                }
+            }
+        }
+
+        function getContrastColor(hexColor) {
+            if (!hexColor) return '#ffffff';
+            // Convert hex to RGB
+            const r = parseInt(hexColor.substring(1, 3), 16);
+            const g = parseInt(hexColor.substring(3, 5), 16);
+            const b = parseInt(hexColor.substring(5, 7), 16);
+
+            // Calculate luminance (per WCAG 2.0)
+            const luminance = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+
+            // Use a threshold to determine black or white text
+            return luminance > 0.5 ? '#000000' : '#ffffff';
+        }
+
+        function formatDate(date) {
+            if (!date) return 'N/A';
+            const options = { year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true };
+            return date.toLocaleDateString(undefined, options);
+        }
+
+        function sanitizeText(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function linkify(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            const safe = div.innerHTML;
+            return safe.replace(
+                /(https?:\/\/[^\s<>"']+)/g,
+                '<a href="$1" target="_blank" rel="noopener noreferrer" style="color:inherit;text-decoration:underline;opacity:0.8;">$1</a>'
+            );
+        }
+
+        // Authentication Functions
+        async function loginWithGoogle() {
+            try {
+                const result = await signInWithPopup(auth, provider);
+                const user = result.user;
+                
+                if (user.email !== ADMIN_EMAIL) {
+                    await signOut(auth);
+                    showToast('Unauthorized access. Only Imperial forces allowed.', 'error');
+                    return;
+                }
+                
+                showToast('Welcome to the Empire, Lord Vader', 'success');
+                await logAdminAction('LOGIN', 'Imperial Lord accessed the Death Star');
+            } catch (error) {
+                console.error('Login error:', error);
+                showToast('Login failed: ' + error.message, 'error');
+            }
+        }
+
+        async function logout() {
+            try {
+                await logAdminAction('LOGOUT', 'Imperial Lord left the Death Star');
+                await signOut(auth);
+                showToast('May the Force be with you', 'info');
+            } catch (error) {
+                console.error('Logout error:', error);
+                showToast('Logout failed', 'error');
+            }
+        }
+
+        // Admin Activity Logging
+        async function logAdminAction(action, details) {
+            try {
+                await addDoc(collection(db, 'adminLogs'), {
+                    admin: currentUser?.email || 'unknown',
+                    action: action,
+                    details: details,
+                    timestamp: serverTimestamp(),
+                    createdAt: new Date()
+                });
+            } catch (error) {
+                console.error('Failed to log admin action:', error);
+            }
+        }
+
+        // Dashboard Functions
+        async function loadDashboardStats() {
+            try {
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                
+                // Total notes
+                const totalNotesSnapshot = await getDocs(collection(db, 'notes'));
+                document.getElementById('totalNotes').textContent = totalNotesSnapshot.size;
+                
+                // Today's notes
+                const todayNotesQuery = query(
+                    collection(db, 'notes'),
+                    where('createdAt', '>=', today)
+                );
+                const todayNotesSnapshot = await getDocs(todayNotesQuery);
+                document.getElementById('todayNotes').textContent = todayNotesSnapshot.size;
+                
+                // Active users today (unique device IDs)
+                const uniqueDevices = new Set();
+                todayNotesSnapshot.forEach(doc => {
+                    const data = doc.data();
+                    if (data.deviceId) uniqueDevices.add(data.deviceId);
+                });
+                document.getElementById('activeUsers').textContent = uniqueDevices.size;
+                
+                // Banned users
+                const bannedSnapshot = await getDocs(collection(db, 'bannedDevices'));
+                let activeBans = 0;
+                bannedSnapshot.forEach(doc => {
+                    const data = doc.data();
+                    if (data.active && (!data.expiresAt || data.expiresAt.toDate() > new Date())) {
+                        activeBans++;
+                    }
+                });
+                document.getElementById('bannedUsers').textContent = activeBans;
+                
+            } catch (error) {
+                console.error('Error loading dashboard stats:', error);
+                showToast('Failed to load stats', 'error');
+            }
+        }
+
+        // Analytics Functions
+        async function loadAnalytics() {
+            try {
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+                
+                // Messages this hour
+                const hourlyQuery = query(
+                    collection(db, 'notes'),
+                    where('createdAt', '>=', oneHourAgo)
+                );
+                const hourlySnapshot = await getDocs(hourlyQuery);
+                document.getElementById('analyticsHourlyPosts').textContent = hourlySnapshot.size;
+                
+                // Today's analytics
+                const todayQuery = query(
+                    collection(db, 'notes'),
+                    where('createdAt', '>=', today)
+                );
+                const todaySnapshot = await getDocs(todayQuery);
+                
+                // Most popular color
+                const colorCounts = {};
+                let totalLength = 0;
+                let totalReactions = 0;
+                
+                todaySnapshot.forEach(doc => {
+                    const data = doc.data();
+                    // Exclude admin notes from color analytics if their color is fixed to #000000
+                    if (!data.isAdmin && data.color) {
+                        colorCounts[data.color] = (colorCounts[data.color] || 0) + 1;
+                    }
+                    totalLength += data.message?.length || 0;
+                    totalReactions += data.reactions?.length || 0;
+                });
+                
+                const topColor = Object.keys(colorCounts).length > 0 ? 
+                                 Object.keys(colorCounts).reduce((a, b) => colorCounts[a] > colorCounts[b] ? a : b) : 
+                                 '#ff595e'; // Default if no notes or only admin notes
+                
+                document.getElementById('analyticsTopColor').textContent = topColor;
+                document.getElementById('analyticsTopColor').style.color = topColor;
+                
+                // Average message length
+                const avgLength = todaySnapshot.size > 0 ? Math.round(totalLength / todaySnapshot.size) : 0;
+                document.getElementById('analyticsAvgLength').textContent = avgLength;
+                
+                // Total reactions
+                document.getElementById('analyticsReactions').textContent = totalReactions;
+                
+            } catch (error) {
+                console.error('Error loading analytics:', error);
+                showToast('Failed to load analytics', 'error');
+            }
+        }
+
+        // Notes Management Functions
+        function loadNotes() {
+            const notesDisplay = document.getElementById('notesDisplay');
+            notesDisplay.innerHTML = '<div class="loading"><i class="fas fa-spinner spinner"></i> Loading Imperial communications...</div>';
+            
+            const q = query(collection(db, 'notes'), orderBy('createdAt', 'desc'), limit(50));
+            
+            onSnapshot(q, (snapshot) => {
+                allNotes = [];
+                snapshot.forEach(doc => {
+                    allNotes.push({ id: doc.id, ...doc.data() });
+                });
+                
+                filteredNotes = [...allNotes];
+                displayNotes();
+            }, (error) => {
+                console.error('Error loading notes:', error);
+                notesDisplay.innerHTML = '<div class="error">Failed to load Imperial communications</div>';
+            });
+        }
+
+        function displayNotes() {
+            const notesDisplay = document.getElementById('notesDisplay');
+            
+            if (filteredNotes.length === 0) {
+                notesDisplay.innerHTML = '<div class="no-notes">No Imperial communications found</div>';
+                return;
+            }
+            
+            notesDisplay.innerHTML = '';
+            
+            filteredNotes.forEach(note => {
+                const noteElement = createNoteElement(note);
+                notesDisplay.appendChild(noteElement);
+            });
+            
+            updateBulkActions();
+        }
+
+        function createNoteElement(note) {
+            const noteElement = document.createElement('div');
+            noteElement.className = `admin-note-card ${note.isAdmin ? 'admin-note' : ''}`;
+            noteElement.dataset.noteId = note.id;
+
+            const isAdmin = note.isAdmin || false;
+            const displayColor = note.color || '#1a1a1a';
+            const textColor = getContrastColor(displayColor);
+
+            noteElement.style.backgroundColor = displayColor;
+            noteElement.style.color = textColor;
+
+            // ── Header row (checkbox + badges) ──────────────────────────
+            const headerDiv = document.createElement('div');
+            headerDiv.className = 'note-header';
+
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.className = 'note-checkbox';
+            checkbox.dataset.noteId = note.id;
+            checkbox.addEventListener('change', handleNoteSelection);
+            headerDiv.appendChild(checkbox);
+
+            const badgesDiv = document.createElement('div');
+            badgesDiv.style.cssText = 'display:flex;gap:4px;align-items:center;';
+            if (isAdmin) {
+                const imperialBadge = document.createElement('span');
+                imperialBadge.className = 'note-badge';
+                imperialBadge.textContent = 'IMPERIAL';
+                badgesDiv.appendChild(imperialBadge);
+            }
+            if (note.isDeleted) {
+                const deletedBadge = document.createElement('span');
+                deletedBadge.className = 'note-deleted-badge';
+                deletedBadge.textContent = 'DELETED';
+                badgesDiv.appendChild(deletedBadge);
+            }
+            headerDiv.appendChild(badgesDiv);
+            noteElement.appendChild(headerDiv);
+
+            // ── Message (linkified, with see-more) ──────────────────────
+            const contentBlock = document.createElement('div');
+            contentBlock.className = 'note-content';
+            contentBlock.style.flexGrow = '1';
+
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'note-message';
+            messageDiv.innerHTML = linkify(note.message);
+            contentBlock.appendChild(messageDiv);
+            noteElement.appendChild(contentBlock);
+
+            // ── Meta info ───────────────────────────────────────────────
+            const metaDiv = document.createElement('div');
+            metaDiv.className = 'note-meta';
+            metaDiv.innerHTML = `
+                <div><strong>Author:</strong> ${sanitizeText(note.name || 'Anonymous')}</div>
+                <div><strong>Device:</strong> <span style="font-family:monospace;">${note.deviceId ? note.deviceId.substring(0, 12) + '...' : 'N/A'}</span></div>
+                <div><strong>IP:</strong> <span style="font-family:monospace;">${sanitizeText(note.ip || 'N/A')}</span></div>
+                <div><strong>Posted:</strong> ${formatDate(note.createdAt?.toDate ? note.createdAt.toDate() : note.createdAt instanceof Date ? note.createdAt : null)}</div>
+            `;
+            noteElement.appendChild(metaDiv);
+
+            // ── Bottom row: views + reactions + actions ──────────────────
+            const bottomDiv = document.createElement('div');
+            bottomDiv.className = 'note-bottom';
+
+            // Views
+            const viewDiv = document.createElement('div');
+            viewDiv.className = 'view-counter';
+            viewDiv.innerHTML = `<i class="fas fa-eye"></i> Seen by ${note.viewCount || note.viewedBy?.length || 0}`;
+            bottomDiv.appendChild(viewDiv);
+
+            // Reactions
+            const reactionDiv = document.createElement('div');
+            reactionDiv.className = 'note-reaction-admin';
+            const reactionCount = note.reactions?.length || 0;
+            reactionDiv.innerHTML = `<i class="fas fa-heart" style="color:#ff4d6d;"></i> ${reactionCount}`;
+            bottomDiv.appendChild(reactionDiv);
+
+            noteElement.appendChild(bottomDiv);
+
+            // ── Action buttons ───────────────────────────────────────────
+            const actionsDiv = document.createElement('div');
+            actionsDiv.className = 'note-actions';
+
+            const banBtn = document.createElement('button');
+            banBtn.className = 'btn-dark btn-small ban-device-btn';
+            banBtn.dataset.deviceId = note.deviceId;
+            banBtn.innerHTML = '<i class="fas fa-ban"></i> Ban';
+            if (note.deviceId && note.deviceId !== 'IMPERIAL_COMMAND') {
+                banBtn.addEventListener('click', () => openBanModal(note.deviceId));
+            } else {
+                banBtn.disabled = true;
+                banBtn.style.opacity = '0.5';
+                banBtn.style.cursor = 'not-allowed';
+            }
+            actionsDiv.appendChild(banBtn);
+
+            const downloadBtn = document.createElement('button');
+            downloadBtn.className = 'btn-dark btn-small download-note-btn';
+            downloadBtn.dataset.noteId = note.id;
+            downloadBtn.innerHTML = '<i class="fas fa-download"></i> Download';
+            downloadBtn.addEventListener('click', () => downloadNoteAsImage(note.id));
+            actionsDiv.appendChild(downloadBtn);
+
+            const deleteBtn = document.createElement('button');
+            deleteBtn.className = 'btn-danger btn-small delete-note-btn';
+            deleteBtn.dataset.noteId = note.id;
+            deleteBtn.innerHTML = '<i class="fas fa-trash"></i> Delete';
+            deleteBtn.addEventListener('click', () => deleteNote(note.id));
+            actionsDiv.appendChild(deleteBtn);
+
+            noteElement.appendChild(actionsDiv);
+
+            // ── See more / See less (after render) ──────────────────────
+            // We measure whether the text NATURALLY exceeds the clamp limit
+            // by comparing the unclamped clone height against the clamped
+            // max height (lineHeight × clampLines). This avoids relying on
+            // clientHeight which is unreliable inside flex containers.
+            setTimeout(() => {
+                const CLAMP_LINES = 5;
+                const cs = getComputedStyle(messageDiv);
+                const lineHeightPx = parseFloat(cs.lineHeight) || (parseFloat(cs.fontSize) * 1.4);
+                const clampedMaxH  = lineHeightPx * CLAMP_LINES;
+
+                // Clone without any clamping to get the true natural height
+                const clone = messageDiv.cloneNode(true);
+                clone.style.cssText = [
+                    'position:absolute',
+                    'visibility:hidden',
+                    'pointer-events:none',
+                    'width:' + (messageDiv.offsetWidth || noteElement.offsetWidth - 16) + 'px',
+                    'height:auto',
+                    'max-height:none',
+                    '-webkit-line-clamp:unset',
+                    'line-clamp:unset',
+                    'display:block',
+                    'overflow:visible',
+                    'white-space:pre-wrap',
+                    'word-wrap:break-word',
+                    'line-height:' + cs.lineHeight,
+                    'font-size:' + cs.fontSize,
+                    'font-family:' + cs.fontFamily,
+                    'padding-right:' + cs.paddingRight
+                ].join(';');
+                document.body.appendChild(clone);
+                const naturalHeight = clone.scrollHeight;
+                document.body.removeChild(clone);
+
+                if (naturalHeight > clampedMaxH + 2) {
+                    noteElement.classList.add('is-overflowing');
+                    const seeMoreBtn = document.createElement('button');
+                    seeMoreBtn.className = 'see-more-btn';
+                    seeMoreBtn.textContent = 'See more';
+                    contentBlock.appendChild(seeMoreBtn);
+                    seeMoreBtn.addEventListener('click', () => {
+                        const expanded = noteElement.classList.toggle('is-expanded');
+                        seeMoreBtn.textContent = expanded ? 'See less' : 'See more';
+                    });
+                }
+            }, 150);
+
+            return noteElement;
+        }
+
+        async function downloadNoteAsImage(noteId) {
+            const originalCard = document.querySelector(`.admin-note-card[data-note-id="${noteId}"]`);
+            if (!originalCard) return;
+
+            // ── Pull data from the live card ─────────────────────────────
+            const bgColor  = originalCard.style.backgroundColor || '#FFEB3B';
+            const textColor = originalCard.style.color || '#000000';
+
+            const messageEl  = originalCard.querySelector('.note-message');
+            const authorEl   = originalCard.querySelector('.note-meta div:first-child');
+            const viewEl     = originalCard.querySelector('.view-counter');
+            const reactionEl = originalCard.querySelector('.note-reaction-admin');
+
+            const message       = messageEl  ? messageEl.innerText.trim()  : '';
+            const authorRaw     = authorEl   ? authorEl.innerText.replace(/Author:/i, '').trim() : 'Anonymous';
+            const viewText      = viewEl     ? viewEl.innerText.trim()     : 'Seen by 0';
+            const reactionCount = reactionEl ? reactionEl.innerText.replace(/[^0-9]/g, '').trim() || '0' : '0';
+
+            // ── Mobile-first: fixed 360px width (standard mobile screen) ─
+            // style.css .note-card: height 216px, padding 14px, border-radius 8px
+            // style.css html { font-size: 72% } → 1rem = 11.52px on main site
+            // We match that by setting font-size: 11.52px on the wrapper
+            const IMG_WIDTH       = 360;
+            const BASE_FONT       = 11.52;   // px — matches style.css html{font-size:72%} × 16
+            const NOTE_MIN_H      = 216;     // px — .note-card height
+            const NOTE_PADDING    = 14;      // px — .note-card padding
+            const NOTE_RADIUS     = 8;       // px — .note-card border-radius
+            const CONTENT_MARGIN  = 14;      // px — main-content padding
+
+            // ── Outer wrapper ─────────────────────────────────────────────
+            const wrapper = document.createElement('div');
+            wrapper.style.cssText = `
+                position: absolute;
+                left: -9999px;
+                top: 0;
+                width: ${IMG_WIDTH}px;
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                font-size: ${BASE_FONT}px;
+                box-sizing: border-box;
+                background: #ffffff;
+                display: flex;
+                flex-direction: column;
+                overflow: hidden;
+            `;
+
+            // ── Header: white bg, green bold title, subtle bottom shadow ──
+            // Matches mobile-header from style.css: padding 12px 16px
+            // No hamburger, no + icon — clean share format
+            const headerDiv = document.createElement('div');
+            headerDiv.style.cssText = `
+                width: 100%;
+                padding: 12px 16px;
+                background-color: #ffffff;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                box-sizing: border-box;
+                flex-shrink: 0;
+                box-shadow: 0 2px 6px rgba(0,0,0,0.10);
+                border-bottom: 1px solid #e0e0e0;
+                position: relative;
+                z-index: 1;
+            `;
+            headerDiv.innerHTML = `<span style="
+                font-weight: 700;
+                font-size: ${BASE_FONT * 1.6}px;
+                color: #2e7d32;
+                letter-spacing: 0.2px;
+            ">RSU FreedomWall</span>`;
+            wrapper.appendChild(headerDiv);
+
+            // ── Page background (like .main-content padding) ──────────────
+            const pageDiv = document.createElement('div');
+            pageDiv.style.cssText = `
+                background: #f8f9fa;
+                padding: ${CONTENT_MARGIN}px;
+                box-sizing: border-box;
+            `;
+
+            // ── Note card — exact .note-card values from style.css ────────
+            const noteCard = document.createElement('div');
+            noteCard.style.cssText = `
+                width: 100%;
+                min-height: ${NOTE_MIN_H}px;
+                padding: ${NOTE_PADDING}px;
+                border-radius: ${NOTE_RADIUS}px;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.10);
+                background-color: ${bgColor};
+                color: ${textColor};
+                display: flex;
+                flex-direction: column;
+                box-sizing: border-box;
+                overflow: hidden;
+            `;
+
+            // .note-content: flex:1, overflow:hidden, margin-bottom:8px
+            const contentWrap = document.createElement('div');
+            contentWrap.style.cssText = `
+                flex: 1;
+                overflow: hidden;
+                margin-bottom: 8px;
+            `;
+
+            // .note-message: line-height 1.5, font-size 0.95rem, white-space pre-wrap
+            // Full text — no clamp — image captures everything
+            const msgDiv = document.createElement('div');
+            msgDiv.style.cssText = `
+                word-wrap: break-word;
+                overflow-wrap: anywhere;
+                white-space: pre-wrap;
+                line-height: 1.5;
+                font-size: ${BASE_FONT * 0.95}px;
+                padding-right: 4px;
+            `;
+            msgDiv.textContent = message;
+            contentWrap.appendChild(msgDiv);
+            noteCard.appendChild(contentWrap);
+
+            // .note-author: text-align right, font-style italic, opacity 0.75, margin-bottom 8px
+            const authorDiv = document.createElement('div');
+            authorDiv.style.cssText = `
+                text-align: right;
+                font-style: italic;
+                color: inherit;
+                opacity: 0.75;
+                margin-bottom: 8px;
+                font-size: ${BASE_FONT * 0.88}px;
+            `;
+            authorDiv.textContent = `- ${authorRaw}`;
+            noteCard.appendChild(authorDiv);
+
+            // .note-bottom: flex space-between, margin-top auto, padding-top 8px
+            // .view-counter: font-size 0.75rem, opacity 0.6, gap 6px
+            // .reaction-btn: font-size 0.9rem, gap 4px, padding 4px 8px, border-radius 15px
+            const bottomDiv = document.createElement('div');
+            bottomDiv.style.cssText = `
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-top: auto;
+                padding-top: 8px;
+                gap: 8px;
+                color: inherit;
+            `;
+            bottomDiv.innerHTML = `
+                <span style="
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 6px;
+                    font-size: ${BASE_FONT * 0.75}px;
+                    opacity: 0.6;
+                    margin-right: auto;
+                ">
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                         width="${Math.round(BASE_FONT * 0.75)}"
+                         height="${Math.round(BASE_FONT * 0.75)}"
+                         viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2"
+                         stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                        <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                    ${sanitizeText(viewText)}
+                </span>
+                <span style="
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 4px;
+                    font-size: ${BASE_FONT * 0.9}px;
+                    opacity: 0.7;
+                    padding: 4px 8px;
+                    border-radius: 15px;
+                    min-width: 40px;
+                    justify-content: center;
+                ">
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                         width="${Math.round(BASE_FONT * 1.0)}"
+                         height="${Math.round(BASE_FONT * 1.0)}"
+                         viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2"
+                         stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                    </svg>
+                    ${sanitizeText(reactionCount)}
+                </span>
+            `;
+            noteCard.appendChild(bottomDiv);
+            pageDiv.appendChild(noteCard);
+            wrapper.appendChild(pageDiv);
+
+            document.body.appendChild(wrapper);
+
+            // Two rAF frames — let browser fully paint before capture
+            await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+
+            try {
+                const totalWidth  = wrapper.offsetWidth;
+                const totalHeight = wrapper.scrollHeight;
+
+                const canvas = await html2canvas(wrapper, {
+                    backgroundColor: '#ffffff',
+                    scale: 3,          // 3× for crisp mobile screens
+                    useCORS: true,
+                    logging: false,
+                    width:  totalWidth,
+                    height: totalHeight,
+                    windowWidth:  totalWidth,
+                    windowHeight: totalHeight
+                });
+
+                const link = document.createElement('a');
+                link.download = `RSU-FreedomWall-${noteId.substring(0, 8)}.png`;
+                link.href = canvas.toDataURL('image/png', 1.0);
+                link.click();
+
+                showToast('Image downloaded!', 'success');
+            } catch (err) {
+                console.error('Image generation error:', err);
+                showToast('Failed to generate image', 'error');
+            } finally {
+                document.body.removeChild(wrapper);
+            }
+        }
+
+        function handleNoteSelection(e) {
+            const noteId = e.target.dataset.noteId;
+            if (e.target.checked) {
+                selectedNotes.add(noteId);
+            } else {
+                selectedNotes.delete(noteId);
+            }
+            updateBulkActions();
+            updateNoteSelection();
+        }
+
+        function updateNoteSelection() {
+            document.querySelectorAll('.admin-note-card').forEach(card => {
+                const checkbox = card.querySelector('.note-checkbox');
+                const noteId = checkbox.dataset.noteId;
+                card.classList.toggle('selected', selectedNotes.has(noteId));
+            });
+        }
+
+        function updateBulkActions() {
+            const bulkActions = document.getElementById('bulkActions');
+            const selectedCount = document.getElementById('selectedCount');
+            
+            selectedCount.textContent = selectedNotes.size;
+            bulkActions.classList.toggle('show', selectedNotes.size > 0);
+        }
+
+        // Search Function
+        function searchNotes(searchTerm) {
+            if (!searchTerm.trim()) {
+                filteredNotes = [...allNotes];
+            } else {
+                const term = searchTerm.toLowerCase();
+                filteredNotes = allNotes.filter(note => 
+                    note.message?.toLowerCase().includes(term) ||
+                    note.name?.toLowerCase().includes(term) ||
+                    note.deviceId?.toLowerCase().includes(term) ||
+                    note.ip?.toLowerCase().includes(term)
+                );
+            }
+            displayNotes();
+        }
+
+        // Note Operations
+        async function deleteNote(noteId) {
+            if (!confirm('Execute this message? This action cannot be undone.')) return;
+            
+            try {
+                await deleteDoc(doc(db, 'notes', noteId));
+                await logAdminAction('DELETE_NOTE', `Deleted note: ${noteId}`);
+                showToast('Message executed successfully', 'success');
+            } catch (error) {
+                console.error('Error deleting note:', error);
+                showToast('Failed to execute message', 'error');
+            }
+        }
+
+        async function bulkDeleteNotes() {
+            if (selectedNotes.size === 0) return;
+            
+            if (!confirm(`Execute ${selectedNotes.size} messages? This action cannot be undone.`)) return;
+            
+            try {
+                const deletePromises = Array.from(selectedNotes).map(noteId => 
+                    deleteDoc(doc(db, 'notes', noteId))
+                );
+                
+                await Promise.all(deletePromises);
+                await logAdminAction('BULK_DELETE', `Executed ${selectedNotes.size} messages`);
+                
+                selectedNotes.clear();
+                updateBulkActions();
+                showToast(`Successfully executed ${deletePromises.length} messages`, 'success');
+            } catch (error) {
+                console.error('Error bulk deleting:', error);
+                showToast('Failed to execute bulk operation', 'error');
+            }
+        }
+
+        async function createAdminNote(message, name, color) {
+            try {
+                await addDoc(collection(db, 'notes'), {
+                    message: message,
+                    name: name || 'Admin',
+                    color: color, 
+                    isAdmin: true,
+                    deviceId: 'IMPERIAL_COMMAND',
+                    ip: 'DEATH_STAR',
+                    reactions: [],
+                    createdAt: serverTimestamp()
+                });
+                
+                await logAdminAction('CREATE_ADMIN_NOTE', `Created Imperial message: "${message.substring(0, 50)}..." with color ${color}`);
+                showToast('Imperial message sent successfully', 'success');
+            } catch (error) {
+                console.error('Error creating admin note:', error);
+                showToast('Failed to send Imperial message', 'error');
+                throw error;
+            }
+        }
+
+        // Ban Management Functions
+        async function banUser(deviceId, duration, reason) {
+            try {
+                const now = new Date();
+                const banData = {
+                    deviceId: deviceId,
+                    active: true,
+                    reason: reason || 'Imperial decree',
+                    bannedBy: currentUser.email,
+                    bannedAt: serverTimestamp(),
+                    createdAt: now
+                };
+                
+                if (duration !== 'permanent') {
+                    const durationMs = parseInt(duration) * 1000;
+                    banData.expiresAt = new Date(now.getTime() + durationMs);
+                    banData.duration = duration;
+                } else {
+                    banData.permanent = true;
+                }
+                
+                await setDoc(doc(db, 'bannedDevices', deviceId), banData);
+                await logAdminAction('BAN_USER', `Imprisoned rebel: ${deviceId} - Reason: ${reason}`);
+                
+                const durationText = duration === 'permanent' ? 'permanently' : `for ${formatDuration(duration)}`;
+                showToast(`Rebel imprisoned ${durationText}`, 'success');
+            } catch (error) {
+                console.error('Error banning user:', error);
+                showToast('Failed to imprison rebel', 'error');
+                throw error;
+            }
+        }
+
+        async function unbanUser(deviceId) {
+            try {
+                await updateDoc(doc(db, 'bannedDevices', deviceId), {
+                    active: false,
+                    unbannedAt: serverTimestamp(),
+                    unbannedBy: currentUser.email
+                });
+                
+                await logAdminAction('UNBAN_USER', `Released rebel: ${deviceId}`);
+                showToast('Rebel released from imprisonment', 'success');
+            } catch (error) {
+                console.error('Error unbanning user:', error);
+                showToast('Failed to release rebel', 'error');
+            }
+        }
+
+        function formatDuration(seconds) {
+            const hours = Math.floor(seconds / 3600);
+            const days = Math.floor(hours / 24);
+            
+            if (days > 0) return `${days} day${days > 1 ? 's' : ''}`;
+            return `${hours} hour${hours > 1 ? 's' : ''}`;
+        }
+
+        // Load Banned Users
+        function loadBannedUsers() {
+            const bannedList = document.getElementById('bannedUsersList');
+            bannedList.innerHTML = '<div class="loading"><i class="fas fa-spinner spinner"></i> Loading imprisonment records...</div>';
+            
+            const q = query(collection(db, 'bannedDevices'), orderBy('bannedAt', 'desc'));
+            
+            onSnapshot(q, (snapshot) => {
+                bannedList.innerHTML = '';
+                
+                if (snapshot.empty) {
+                    bannedList.innerHTML = '<div style="padding: 1rem; text-align: center; color: #888;">No imprisoned rebels</div>';
+                    return;
+                }
+                
+                snapshot.forEach(doc => {
+                    const ban = doc.data();
+                    const now = new Date();
+                    const isActive = ban.active && (!ban.expiresAt || ban.expiresAt.toDate() > now);
+                    
+                    if (!isActive) return; // Only show active bans
+                    
+                    const banElement = document.createElement('div');
+                    banElement.className = 'ban-item';
+                    
+                    const expiryText = ban.permanent ? 'Permanent' : 
+                        ban.expiresAt ? `Expires: ${formatDate(ban.expiresAt.toDate())}` : 'Permanent';
+                    
+                    banElement.innerHTML = `
+                        <div class="ban-info">
+                            <div class="ban-device-id">${ban.deviceId.substring(0, 16)}...</div>
+                            <div class="ban-details">
+                                <div>Reason: ${sanitizeText(ban.reason || 'Imperial decree')}</div>
+                                <div>Imprisoned: ${formatDate(ban.bannedAt?.toDate() || new Date())}</div>
+                                <div>${expiryText}</div>
+                            </div>
+                        </div>
+                        <button class="btn-unban" data-device-id="${ban.deviceId}">
+                            <i class="fas fa-unlock"></i> Release
+                        </button>
+                    `;
+                    
+                    banElement.querySelector('.btn-unban').addEventListener('click', () => {
+                        if (confirm('Release this rebel from imprisonment?')) {
+                            unbanUser(ban.deviceId);
+                        }
+                    });
+                    
+                    bannedList.appendChild(banElement);
+                });
+            });
+        }
+
+        // Activity Logs
+        function loadActivityLogs() {
+            const logsContainer = document.getElementById('activityLogs');
+            logsContainer.innerHTML = '<div class="loading"><i class="fas fa-spinner spinner"></i> Loading Imperial records...</div>';
+            
+            const q = query(collection(db, 'adminLogs'), orderBy('timestamp', 'desc'), limit(50));
+            
+            onSnapshot(q, (snapshot) => {
+                logsContainer.innerHTML = '';
+                
+                if (snapshot.empty) {
+                    logsContainer.innerHTML = '<div style="padding: 1rem; text-align: center; color: #888;">No Imperial records found</div>';
+                    return;
+                }
+                
+                snapshot.forEach(doc => {
+                    const log = doc.data();
+                    const logElement = document.createElement('div');
+                    logElement.className = 'log-entry';
+                    
+                    logElement.innerHTML = `
+                        <div class="log-time">${formatDate(log.timestamp?.toDate() || log.createdAt)}</div>
+                        <div><span class="log-action">${log.action}</span> - ${sanitizeText(log.details)}</div>
+                        <div style="font-size: 0.8rem; color: #666;">By: ${log.admin}</div>
+                    `;
+                    
+                    logsContainer.appendChild(logElement);
+                });
+            });
+        }
+
+        // Export Functions
+        async function exportNotes() {
+            try {
+                showToast('Preparing Imperial data export...', 'info');
+                
+                const snapshot = await getDocs(collection(db, 'notes'));
+                const notes = [];
+                
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    notes.push({
+                        id: doc.id,
+                        message: data.message,
+                        name: data.name || 'Anonymous',
+                        color: data.color,
+                        deviceId: data.deviceId,
+                        ip: data.ip,
+                        isAdmin: data.isAdmin || false,
+                        reactions: data.reactions?.length || 0,
+                        createdAt: data.createdAt?.toDate()?.toISOString() || ''
+                    });
+                });
+                
+                const csv = convertToCSV(notes);
+                downloadCSV(csv, `imperial-messages-${new Date().toISOString().split('T')[0]}.csv`);
+                
+                await logAdminAction('EXPORT_NOTES', `Exported ${notes.length} Imperial messages`);
+                showToast('Imperial data exported successfully', 'success');
+            } catch (error) {
+                console.error('Export error:', error);
+                showToast('Failed to export Imperial data', 'error');
+            }
+        }
+
+        async function exportBans() {
+            try {
+                showToast('Preparing ban records export...', 'info');
+                
+                const snapshot = await getDocs(collection(db, 'bannedDevices'));
+                const bans = [];
+                
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    bans.push({
+                        deviceId: data.deviceId,
+                        active: data.active,
+                        reason: data.reason || '',
+                        bannedBy: data.bannedBy || '',
+                        bannedAt: data.bannedAt?.toDate()?.toISOString() || '',
+                        expiresAt: data.expiresAt?.toDate()?.toISOString() || 'Permanent',
+                        permanent: data.permanent || false
+                    });
+                });
+                
+                const csv = convertToCSV(bans);
+                downloadCSV(csv, `imperial-bans-${new Date().toISOString().split('T')[0]}.csv`);
+                
+                await logAdminAction('EXPORT_BANS', `Exported ${bans.length} ban records`);
+                showToast('Ban records exported successfully', 'success');
+            } catch (error) {
+                console.error('Export error:', error);
+                showToast('Failed to export ban records', 'error');
+            }
+        }
+
+        function convertToCSV(data) {
+            if (data.length === 0) return '';
+            
+            const headers = Object.keys(data[0]);
+            const csvContent = [
+                headers.join(','),
+                ...data.map(row => 
+                    headers.map(header => {
+                        const value = row[header];
+                        return typeof value === 'string' && value.includes(',') 
+                            ? `"${value.replace(/"/g, '""')}"` 
+                            : value;
+                    }).join(',')
+                )
+            ].join('\n');
+            
+            return csvContent;
+        }
+
+        function downloadCSV(csv, filename) {
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        }
+
+        // Navigation Functions
+        function switchSection(sectionId) {
+            // Hide all sections
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.remove('active');
+            });
+            
+            // Remove active class from nav links
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+            });
+            
+            // Show selected section
+            document.getElementById(sectionId).classList.add('active');
+            
+            // Add active class to corresponding nav link
+            document.querySelector(`[href="#${sectionId}"]`).classList.add('active');
+            
+            // Close sidebar on mobile after navigation
+            if (window.innerWidth <= 768) {
+                document.querySelector('.admin-sidebar').classList.remove('open');
+            }
+
+            // Load data for specific sections
+            switch (sectionId) {
+                case 'dashboard':
+                    loadDashboardStats();
+                    break;
+                case 'notes':
+                    if (allNotes.length === 0) loadNotes();
+                    break;
+                case 'users':
+                    loadBannedUsers();
+                    break;
+                case 'analytics':
+                    loadAnalytics();
+                    break;
+                case 'logs':
+                    loadActivityLogs();
+                    break;
+            }
+        }
+
+        // Modal Functions
+        function openModal(modalId) {
+            document.getElementById(modalId).style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+
+        function openBanModal(deviceId = '') {
+            document.getElementById('modalBanDeviceId').value = deviceId;
+            openModal('banModal');
+        }
+
+       // Rename your custom function
+function initAdminApp() {
+    // Auth state observer
+    onAuthStateChanged(auth, (user) => {
+        if (user && user.email === ADMIN_EMAIL) {
+            currentUser = user;
+            document.getElementById('loginContainer').style.display = 'none';
+            document.getElementById('adminContainer').style.display = 'block';
+            document.getElementById('adminEmail').textContent = user.email;
+            
+            // Load initial data
+            loadDashboardStats();
+            loadNotes();
+        } else {
+            currentUser = null;
+            document.getElementById('loginContainer').style.display = 'flex';
+            document.getElementById('adminContainer').style.display = 'none';
+        }
+    });
+}
+
+
+            // Login button
+            document.getElementById('loginBtn').addEventListener('click', loginWithGoogle);
+
+            // Logout button
+            document.getElementById('logoutBtn').addEventListener('click', logout);
+
+            // Navigation
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const sectionId = link.getAttribute('href').substring(1);
+                    switchSection(sectionId);
+                });
+            });
+
+            // Dashboard refresh
+            document.getElementById('refreshDashboard').addEventListener('click', loadDashboardStats);
+
+            // Create admin note
+            document.getElementById('createAdminNote').addEventListener('click', () => {
+                openModal('adminNoteModal');
+            });
+
+            // Admin note form
+            document.getElementById('adminNoteForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const submitBtn = document.getElementById('submitAdminNote');
+                setButtonLoading(submitBtn, true);
+
+                try {
+                    const message = document.getElementById('adminMessage').value.trim();
+                    const name = document.getElementById('adminName').value.trim();
+                    const color = document.getElementById('adminNoteColor').value; // Get selected color from hidden input
+
+                    if (!message) throw new Error('Imperial message is required');
+
+                    await createAdminNote(message, name, color); // Pass color to function
+                    closeModal('adminNoteModal');
+                    document.getElementById('adminNoteForm').reset();
+                    document.getElementById('adminCharCount').textContent = '0';
+                    
+                    // Reset selected swatch to default (e.g., #1a1a1a)
+                    document.querySelectorAll('#adminNoteColorSwatches .color-swatch').forEach(swatch => {
+                        swatch.classList.remove('selected');
+                    });
+                    const defaultSwatch = document.querySelector('#adminNoteColorSwatches .color-swatch[data-color="#1a1a1a"]');
+                    if (defaultSwatch) {
+                        defaultSwatch.classList.add('selected');
+                        document.getElementById('adminNoteColor').value = '#1a1a1a';
+                    }
+
+                } catch (error) {
+                    showToast(error.message, 'error');
+                } finally {
+                    setButtonLoading(submitBtn, false);
+                }
+            });
+
+            // Admin note character count
+            document.getElementById('adminMessage').addEventListener('input', (e) => {
+                document.getElementById('adminCharCount').textContent = e.target.value.length;
+            });
+
+            // Cancel admin note
+            document.getElementById('cancelAdminNote').addEventListener('click', () => {
+                closeModal('adminNoteModal');
+                document.getElementById('adminNoteForm').reset();
+                document.getElementById('adminCharCount').textContent = '0';
+                
+                // Reset selected swatch to default (e.g., #1a1a1a)
+                document.querySelectorAll('#adminNoteColorSwatches .color-swatch').forEach(swatch => {
+                    swatch.classList.remove('selected');
+                });
+                const defaultSwatch = document.querySelector('#adminNoteColorSwatches .color-swatch[data-color="#1a1a1a"]');
+                if (defaultSwatch) {
+                    defaultSwatch.classList.add('selected');
+                    document.getElementById('adminNoteColor').value = '#1a1a1a';
+                }
+            });
+
+            // Color swatch selection for admin notes
+            document.addEventListener('DOMContentLoaded', () => {
+                const adminNoteColorSwatches = document.getElementById('adminNoteColorSwatches');
+                const adminNoteColorInput = document.getElementById('adminNoteColor'); // This is the hidden input
+
+                if (adminNoteColorSwatches) {
+                    adminNoteColorSwatches.addEventListener('click', (e) => {
+                        if (e.target.classList.contains('color-swatch')) {
+                            // Remove 'selected' class from all swatches
+                            document.querySelectorAll('#adminNoteColorSwatches .color-swatch').forEach(swatch => {
+                                swatch.classList.remove('selected');
+                            });
+                            // Add 'selected' class to the clicked swatch
+                            e.target.classList.add('selected');
+                            // Set the value of the hidden input
+                            adminNoteColorInput.value = e.target.dataset.color;
+                        }
+                    });
+                }
+            });
+
+
+            // Search functionality
+            document.getElementById('searchNotes').addEventListener('input', (e) => {
+                searchNotes(e.target.value);
+            });
+
+            document.getElementById('clearSearch').addEventListener('click', () => {
+                document.getElementById('searchNotes').value = '';
+                searchNotes('');
+            });
+
+            // Bulk actions
+            document.getElementById('bulkDelete').addEventListener('click', bulkDeleteNotes);
+
+            document.getElementById('deselectAll').addEventListener('click', () => {
+                selectedNotes.clear();
+                document.querySelectorAll('.note-checkbox').forEach(checkbox => {
+                    checkbox.checked = false;
+                });
+                updateBulkActions();
+                updateNoteSelection();
+            });
+
+            // Ban user quick action
+            document.getElementById('banUser').addEventListener('click', () => {
+                const deviceId = document.getElementById('banDeviceId').value.trim();
+                if (deviceId) {
+                    openBanModal(deviceId);
+                } else {
+                    showToast('Please enter a Device ID to imprison', 'error');
+                }
+            });
+
+            // Ban form
+            document.getElementById('banForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const submitBtn = document.getElementById('submitBan');
+                setButtonLoading(submitBtn, true);
+
+                try {
+                    const deviceId = document.getElementById('modalBanDeviceId').value.trim();
+                    const reason = document.getElementById('banReason').value.trim();
+
+                    if (!deviceId) throw new Error('Device ID is required');
+
+                    // Get selected duration
+                    let duration;
+                    const selectedPreset = document.querySelector('.duration-preset.selected');
+                    const customDuration = document.getElementById('customDuration').value;
+                    const customUnit = document.getElementById('customUnit').value;
+
+                    if (customDuration && parseInt(customDuration) > 0) {
+                        duration = parseInt(customDuration) * parseInt(customUnit);
+                    } else if (selectedPreset) {
+                        duration = selectedPreset.dataset.duration;
+                    } else {
+                        duration = '86400'; // Default 1 day
+                    }
+
+                    await banUser(deviceId, duration, reason);
+                    closeModal('banModal');
+                    document.getElementById('banForm').reset();
+                    document.getElementById('banDeviceId').value = '';
+
+                    // Reset duration presets
+                    document.querySelectorAll('.duration-preset').forEach(btn => {
+                        btn.classList.remove('selected');
+                    });
+                    document.querySelector('[data-duration="86400"]').classList.add('selected');
+
+                } catch (error) {
+                    showToast(error.message, 'error');
+                } finally {
+                    setButtonLoading(submitBtn, false);
+                }
+            });
+
+            // Cancel ban
+            document.getElementById('cancelBan').addEventListener('click', () => {
+                closeModal('banModal');
+                document.getElementById('banForm').reset();
+            });
+
+            // Duration preset selection
+            document.querySelectorAll('.duration-preset').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.duration-preset').forEach(b => b.classList.remove('selected'));
+                    btn.classList.add('selected');
+                    document.getElementById('customDuration').value = '';
+                });
+            });
+
+            // Custom duration input
+            document.getElementById('customDuration').addEventListener('input', () => {
+                if (document.getElementById('customDuration').value) {
+                    document.querySelectorAll('.duration-preset').forEach(b => b.classList.remove('selected'));
+                }
+            });
+
+            // Refresh logs
+            document.getElementById('refreshLogs').addEventListener('click', loadActivityLogs);
+
+            // Export functions
+            document.getElementById('exportNotes').addEventListener('click', exportNotes);
+            document.getElementById('exportBans').addEventListener('click', exportBans);
+
+            // Close modals when clicking outside
+            window.addEventListener('click', (e) => {
+                if (e.target.classList.contains('modal')) {
+                    e.target.style.display = 'none';
+                    document.body.style.overflow = 'auto';
+                }
+            });
+
+            // Handle escape key to close modals
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    document.querySelectorAll('.modal').forEach(modal => {
+                        if (modal.style.display === 'flex') {
+                            modal.style.display = 'none';
+                            document.body.style.overflow = 'auto';
+                        }
+                    });
+                }
+            });
+
+            // Responsive sidebar toggle (for mobile)
+            const mobileMenuToggle = document.getElementById('mobileMenuToggle');
+            const adminSidebar = document.querySelector('.admin-sidebar');
+
+            mobileMenuToggle.addEventListener('click', () => {
+                adminSidebar.classList.toggle('open');
+            });
+
+            // Close sidebar when clicking outside or on a nav link
+            document.addEventListener('click', (e) => {
+                if (adminSidebar.classList.contains('open') && 
+                    !adminSidebar.contains(e.target) && 
+                    !mobileMenuToggle.contains(e.target)) {
+                    adminSidebar.classList.remove('open');
+                }
+            });
+
+            // Start the application
+            document.addEventListener('DOMContentLoaded', initAdminApp);
+
+            // Add custom error handling for banned users
+            window.addEventListener('unhandledrejection', (event) => {
+                if (event.reason?.message?.includes('banned') || event.reason?.message?.includes('imprisoned')) {
+                    showToast('This rebel has been imprisoned and cannot post messages', 'error');
+                    event.preventDefault();
+                }
+            });
+
+            // Show Imperial message when user tries to post while banned
+            function showBanMessage(banInfo) {
+                const message = banInfo.permanent 
+                    ? 'You have been permanently imprisoned by the Empire for violating Imperial law.'
+                    : `You have been imprisoned by the Empire until ${new Date(banInfo.expiresAt).toLocaleString()}. Reason: ${banInfo.reason}`;
+                
+                showToast(message, 'error');
+            }
+
+            // Make ban message function available globally
+            window.showBanMessage = showBanMessage;
+    </script>
+</body>
+</html>
