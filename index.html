@@ -1361,6 +1361,12 @@
         let selectedNotes = new Set();
         let lastVisible = null;
 
+        // Pagination state
+        const PAGE_SIZE = 50;
+        let lastVisibleNote = null;
+        let isLoadingMore = false;
+        let notesListener = null; // track active snapshot listener
+
         // Utility Functions
         function showToast(message, type = 'info') {
             const toast = document.getElementById('toast');
@@ -1574,21 +1580,85 @@
         function loadNotes() {
             const notesDisplay = document.getElementById('notesDisplay');
             notesDisplay.innerHTML = '<div class="loading"><i class="fas fa-spinner spinner"></i> Loading Imperial communications...</div>';
-            
-            const q = query(collection(db, 'notes'), orderBy('createdAt', 'desc'), limit(50));
-            
-            onSnapshot(q, (snapshot) => {
+
+            // Reset pagination state
+            allNotes = [];
+            lastVisibleNote = null;
+            isLoadingMore = false;
+
+            // Detach any previous listener
+            if (notesListener) { notesListener(); notesListener = null; }
+
+            const q = query(collection(db, 'notes'), orderBy('createdAt', 'desc'), limit(PAGE_SIZE));
+
+            notesListener = onSnapshot(q, (snapshot) => {
                 allNotes = [];
                 snapshot.forEach(doc => {
                     allNotes.push({ id: doc.id, ...doc.data() });
                 });
-                
+
+                lastVisibleNote = snapshot.docs[snapshot.docs.length - 1] || null;
                 filteredNotes = [...allNotes];
                 displayNotes();
+                renderLoadMoreButton(snapshot.size === PAGE_SIZE);
             }, (error) => {
                 console.error('Error loading notes:', error);
                 notesDisplay.innerHTML = '<div class="error">Failed to load Imperial communications</div>';
             });
+        }
+
+        async function loadMoreNotes() {
+            if (!lastVisibleNote || isLoadingMore) return;
+            isLoadingMore = true;
+
+            const loadMoreBtn = document.getElementById('loadMoreBtn');
+            if (loadMoreBtn) {
+                loadMoreBtn.disabled = true;
+                loadMoreBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...';
+            }
+
+            try {
+                const q = query(
+                    collection(db, 'notes'),
+                    orderBy('createdAt', 'desc'),
+                    startAfter(lastVisibleNote),
+                    limit(PAGE_SIZE)
+                );
+                const snapshot = await getDocs(q);
+
+                snapshot.forEach(doc => {
+                    allNotes.push({ id: doc.id, ...doc.data() });
+                });
+
+                lastVisibleNote = snapshot.docs[snapshot.docs.length - 1] || null;
+                filteredNotes = [...allNotes];
+                displayNotes();
+                renderLoadMoreButton(snapshot.size === PAGE_SIZE);
+                showToast(`Loaded ${snapshot.size} more Imperial communications`, 'info');
+            } catch (err) {
+                console.error('Error loading more notes:', err);
+                showToast('Failed to load more notes', 'error');
+                renderLoadMoreButton(true); // re-show button on error
+            } finally {
+                isLoadingMore = false;
+            }
+        }
+
+        function renderLoadMoreButton(hasMore) {
+            const existing = document.getElementById('loadMoreBtn');
+            if (existing) existing.remove();
+
+            if (!hasMore) return;
+
+            const btn = document.createElement('button');
+            btn.id = 'loadMoreBtn';
+            btn.className = 'btn-dark';
+            btn.style.cssText = 'margin: 1.2rem auto; display: block; padding: 0.7rem 2rem; font-size: 0.95rem;';
+            btn.innerHTML = '<i class="fas fa-chevron-down"></i> Load More Notes';
+            btn.addEventListener('click', loadMoreNotes);
+
+            const notesDisplay = document.getElementById('notesDisplay');
+            notesDisplay.after(btn);
         }
 
         function displayNotes() {
