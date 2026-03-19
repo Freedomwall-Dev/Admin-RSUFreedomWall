@@ -1138,6 +1138,9 @@
                                 <button id="bulkDelete" class="btn-danger">
                                     <i class="fas fa-trash"></i> Execute Order 66
                                 </button>
+                                <button id="bulkDownload" class="btn-dark">
+                                    <i class="fas fa-download"></i> Download Selected
+                                </button>
                                 <button id="deselectAll" class="btn-dark">
                                     <i class="fas fa-times"></i> Deselect All
                                 </button>
@@ -2159,6 +2162,46 @@
             }
         }
 
+        async function bulkDownloadNotes() {
+            if (selectedNotes.size === 0) return;
+
+            const btn = document.getElementById('bulkDownload');
+            const noteIds = Array.from(selectedNotes);
+            const total = noteIds.length;
+
+            // Disable button and show progress
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Downloading 0 / ${total}...`;
+
+            let success = 0;
+            let failed = 0;
+
+            for (let i = 0; i < noteIds.length; i++) {
+                const noteId = noteIds[i];
+                btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Downloading ${i + 1} / ${total}...`;
+                try {
+                    await downloadNoteAsImage(noteId);
+                    success++;
+                } catch (err) {
+                    console.error(`Failed to download note ${noteId}:`, err);
+                    failed++;
+                }
+                // Small delay between downloads so the browser doesn't block them
+                await new Promise(r => setTimeout(r, 400));
+            }
+
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-download"></i> Download Selected';
+
+            if (failed === 0) {
+                showToast(`Downloaded ${success} note${success !== 1 ? 's' : ''} successfully`, 'success');
+            } else {
+                showToast(`Downloaded ${success}, failed ${failed}`, 'error');
+            }
+
+            await logAdminAction('BULK_DOWNLOAD', `Downloaded ${success} Imperial messages`);
+        }
+
         async function createAdminNote(message, name, color) {
             try {
                 await addDoc(collection(db, 'notes'), {
@@ -2613,6 +2656,7 @@ function initAdminApp() {
 
             // Bulk actions
             document.getElementById('bulkDelete').addEventListener('click', bulkDeleteNotes);
+            document.getElementById('bulkDownload').addEventListener('click', bulkDownloadNotes);
 
             document.getElementById('deselectAll').addEventListener('click', () => {
                 selectedNotes.clear();
