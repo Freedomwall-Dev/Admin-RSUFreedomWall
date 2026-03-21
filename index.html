@@ -16,7 +16,8 @@
       "imports": {
         "firebase/app": "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js",
         "firebase/firestore": "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js",
-        "firebase/auth": "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js"
+        "firebase/auth": "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js",
+        "firebase/app-check": "https://www.gstatic.com/firebasejs/9.22.0/firebase-app-check.js"
       }
     }
     </script>
@@ -1336,6 +1337,7 @@
         import { 
             getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged 
         } from "firebase/auth";
+        import { initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check";
 
         // Firebase Configuration (using your existing config)
         const firebaseConfig = {
@@ -1350,6 +1352,13 @@
 
         // Initialize Firebase
         const app = initializeApp(firebaseConfig);
+
+        // App Check — blocks unauthorized API access to Firestore
+        initializeAppCheck(app, {
+            provider: new ReCaptchaV3Provider('6Lcaq6IrAAAAAJ9JR4z19HGCQVsUbZvStdoLeipj'),
+            isTokenAutoRefreshEnabled: true
+        });
+
         const db = getFirestore(app);
         const auth = getAuth(app);
         const provider = new GoogleAuthProvider();
