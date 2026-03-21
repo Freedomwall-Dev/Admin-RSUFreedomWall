@@ -1353,7 +1353,7 @@
         // Initialize Firebase
         const app = initializeApp(firebaseConfig);
 
-        // App Check — blocks unauthorized API access to Firestore
+        // App Check — blocks unauthorized API access
         initializeAppCheck(app, {
             provider: new ReCaptchaV3Provider('6Lcaq6IrAAAAAJ9JR4z19HGCQVsUbZvStdoLeipj'),
             isTokenAutoRefreshEnabled: true
@@ -1601,7 +1601,7 @@
             // Detach any previous listener
             if (notesListener) { notesListener(); notesListener = null; }
 
-            const q = query(collection(db, 'notes'), orderBy('createdAt', 'desc'), limit(PAGE_SIZE));
+            const q = query(collection(db, 'notes'), where('isDeleted', '==', false), orderBy('createdAt', 'desc'), limit(PAGE_SIZE));
 
             notesListener = onSnapshot(q, (snapshot) => {
                 // If extra pages have already been loaded, don't let the live
@@ -1644,6 +1644,7 @@
             try {
                 const q = query(
                     collection(db, 'notes'),
+                    where('isDeleted', '==', false),
                     orderBy('createdAt', 'desc'),
                     startAfter(lastVisibleNote),
                     limit(PAGE_SIZE)
@@ -1822,6 +1823,7 @@
             // by comparing the unclamped clone height against the clamped
             // max height (lineHeight × clampLines). This avoids relying on
             // clientHeight which is unreliable inside flex containers.
+            requestAnimationFrame(() => {
             setTimeout(() => {
                 const CLAMP_LINES = 5;
                 const cs = getComputedStyle(messageDiv);
@@ -1864,6 +1866,7 @@
                     });
                 }
             }, 150);
+            });
 
             return noteElement;
         }
@@ -2140,7 +2143,10 @@
             if (!confirm('Execute this message? This action cannot be undone.')) return;
             
             try {
-                await deleteDoc(doc(db, 'notes', noteId));
+                // Soft delete — matches main site's where('isDeleted','==',false) filter.
+                // Hard deleteDoc() caused note count to shift, making main site
+                // show wrong page after deletion.
+                await updateDoc(doc(db, 'notes', noteId), { isDeleted: true });
                 await logAdminAction('DELETE_NOTE', `Deleted note: ${noteId}`);
                 showToast('Message executed successfully', 'success');
             } catch (error) {
@@ -2155,8 +2161,9 @@
             if (!confirm(`Execute ${selectedNotes.size} messages? This action cannot be undone.`)) return;
             
             try {
+                // Soft delete — matches main site's isDeleted filter
                 const deletePromises = Array.from(selectedNotes).map(noteId => 
-                    deleteDoc(doc(db, 'notes', noteId))
+                    updateDoc(doc(db, 'notes', noteId), { isDeleted: true })
                 );
                 
                 await Promise.all(deletePromises);
