@@ -1840,14 +1840,6 @@
                 actionsDiv.appendChild(restoreBtn);
             }
 
-            if (note.isDeleted) {
-                const restoreBtn = document.createElement('button');
-                restoreBtn.className = 'btn-dark btn-small';
-                restoreBtn.innerHTML = '<i class="fas fa-undo"></i> Restore';
-                restoreBtn.addEventListener('click', () => restoreNote(note.id));
-                actionsDiv.appendChild(restoreBtn);
-            }
-
             noteElement.appendChild(actionsDiv);
 
             // ── See more / See less (after render) ──────────────────────
