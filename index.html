@@ -1349,8 +1349,6 @@
             getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged 
         } from "firebase/auth";
         import { initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check";
-        import { initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check";
-        import { initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check";
 
         // Firebase Configuration (using your existing config)
         const firebaseConfig = {
@@ -1366,11 +1364,13 @@
         // Initialize Firebase
         const app = initializeApp(firebaseConfig);
 
-        // App Check — blocks unauthorized API access
-        initializeAppCheck(app, {
-            provider: new ReCaptchaV3Provider('6Lcaq6IrAAAAAJ9JR4z19HGCQVsUbZvStdoLeipj'),
-            isTokenAutoRefreshEnabled: true
-        });
+        const isLocalhost = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+        if (!isLocalhost) {
+            initializeAppCheck(app, {
+                provider: new ReCaptchaV3Provider('6Lcaq6IrAAAAAJ9JR4z19HGCQVsUbZvStdoLeipj'),
+                isTokenAutoRefreshEnabled: true
+            });
+        }
 
         const db = getFirestore(app);
         const auth = getAuth(app);
@@ -2216,15 +2216,6 @@
             }
         }
 
-        async function restoreNote(noteId) {
-            try {
-                await updateDoc(doc(db, 'notes', noteId), { isDeleted: false });
-                await logAdminAction('RESTORE_NOTE', `Restored note: ${noteId}`);
-                showToast('Message restored successfully', 'success');
-            } catch (error) {
-                showToast('Failed to restore message', 'error');
-            }
-        }
 
 
         async function bulkDeleteNotes() {
