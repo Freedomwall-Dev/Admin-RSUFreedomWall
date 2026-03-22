@@ -17,6 +17,7 @@
         "firebase/app": "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js",
         "firebase/firestore": "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js",
         "firebase/auth": "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js",
+        "firebase/app-check": "https://www.gstatic.com/firebasejs/9.22.0/firebase-app-check.js",
         "firebase/app-check": "https://www.gstatic.com/firebasejs/9.22.0/firebase-app-check.js"
       }
     }
@@ -1131,6 +1132,12 @@
                             </button>
                         </div>
                         
+                        <div style="display: flex; gap: 0.8rem; flex-wrap: wrap; margin-bottom: 0.8rem;">
+                            <button id="toggleDeletedBtn" class="btn-dark">
+                                <i class="fas fa-eye"></i> Show Deleted
+                            </button>
+                        </div>
+
                         <div id="bulkActions" class="bulk-actions">
                             <div class="selected-count">
                                 <span id="selectedCount">0</span> messages selected
@@ -1138,6 +1145,9 @@
                             <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
                                 <button id="bulkDelete" class="btn-danger">
                                     <i class="fas fa-trash"></i> Execute Order 66
+                                </button>
+                                <button id="bulkRestore" class="btn-dark" style="display:none;">
+                                    <i class="fas fa-undo"></i> Restore Selected
                                 </button>
                                 <button id="bulkDownload" class="btn-dark">
                                     <i class="fas fa-download"></i> Download Selected
@@ -1338,6 +1348,7 @@
             getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged 
         } from "firebase/auth";
         import { initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check";
+        import { initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check";
 
         // Firebase Configuration (using your existing config)
         const firebaseConfig = {
@@ -1372,6 +1383,7 @@
         let filteredNotes = [];
         let selectedNotes = new Set();
         let lastVisible = null;
+        let showDeleted = false;
 
         // Pagination state
         const PAGE_SIZE = 50;
@@ -1601,7 +1613,9 @@
             // Detach any previous listener
             if (notesListener) { notesListener(); notesListener = null; }
 
-            const q = query(collection(db, 'notes'), where('isDeleted', '==', false), orderBy('createdAt', 'desc'), limit(PAGE_SIZE));
+            const q = showDeleted
+                ? query(collection(db, 'notes'), where('isDeleted', '==', true), orderBy('createdAt', 'desc'), limit(PAGE_SIZE))
+                : query(collection(db, 'notes'), where('isDeleted', '==', false), orderBy('createdAt', 'desc'), limit(PAGE_SIZE));
 
             notesListener = onSnapshot(q, (snapshot) => {
                 // If extra pages have already been loaded, don't let the live
@@ -1644,7 +1658,7 @@
             try {
                 const q = query(
                     collection(db, 'notes'),
-                    where('isDeleted', '==', false),
+                    where('isDeleted', '==', showDeleted),
                     orderBy('createdAt', 'desc'),
                     startAfter(lastVisibleNote),
                     limit(PAGE_SIZE)
@@ -1815,6 +1829,14 @@
             deleteBtn.innerHTML = '<i class="fas fa-trash"></i> Delete';
             deleteBtn.addEventListener('click', () => deleteNote(note.id));
             actionsDiv.appendChild(deleteBtn);
+
+            if (note.isDeleted) {
+                const restoreBtn = document.createElement('button');
+                restoreBtn.className = 'btn-dark btn-small';
+                restoreBtn.innerHTML = '<i class="fas fa-undo"></i> Restore';
+                restoreBtn.addEventListener('click', () => restoreNote(note.id));
+                actionsDiv.appendChild(restoreBtn);
+            }
 
             noteElement.appendChild(actionsDiv);
 
@@ -2152,6 +2174,35 @@
             } catch (error) {
                 console.error('Error deleting note:', error);
                 showToast('Failed to execute message', 'error');
+            }
+        }
+
+        async function restoreNote(noteId) {
+            try {
+                await updateDoc(doc(db, 'notes', noteId), { isDeleted: false });
+                await logAdminAction('RESTORE_NOTE', `Restored note: ${noteId}`);
+                showToast('Message restored successfully', 'success');
+            } catch (error) {
+                console.error('Error restoring note:', error);
+                showToast('Failed to restore message', 'error');
+            }
+        }
+
+        async function bulkRestoreNotes() {
+            if (selectedNotes.size === 0) return;
+            if (!confirm(`Restore ${selectedNotes.size} messages to the main site?`)) return;
+            try {
+                const restorePromises = Array.from(selectedNotes).map(noteId =>
+                    updateDoc(doc(db, 'notes', noteId), { isDeleted: false })
+                );
+                await Promise.all(restorePromises);
+                await logAdminAction('BULK_RESTORE', `Restored ${selectedNotes.size} messages`);
+                selectedNotes.clear();
+                updateBulkActions();
+                showToast(`Successfully restored ${restorePromises.length} messages`, 'success');
+            } catch (error) {
+                console.error('Error bulk restoring:', error);
+                showToast('Failed to restore messages', 'error');
             }
         }
 
@@ -2672,7 +2723,25 @@ function initAdminApp() {
 
             // Bulk actions
             document.getElementById('bulkDelete').addEventListener('click', bulkDeleteNotes);
+            document.getElementById('bulkRestore').addEventListener('click', bulkRestoreNotes);
             document.getElementById('bulkDownload').addEventListener('click', bulkDownloadNotes);
+
+            document.getElementById('toggleDeletedBtn').addEventListener('click', () => {
+                showDeleted = !showDeleted;
+                const btn = document.getElementById('toggleDeletedBtn');
+                btn.innerHTML = showDeleted
+                    ? '<i class="fas fa-eye-slash"></i> Hide Deleted'
+                    : '<i class="fas fa-eye"></i> Show Deleted';
+                btn.style.borderColor = showDeleted ? '#ff6666' : '';
+                btn.style.color = showDeleted ? '#ff6666' : '';
+                const bulkRestore = document.getElementById('bulkRestore');
+                const bulkDelete = document.getElementById('bulkDelete');
+                bulkRestore.style.display = showDeleted ? 'inline-flex' : 'none';
+                bulkDelete.style.display = showDeleted ? 'none' : 'inline-flex';
+                selectedNotes.clear();
+                updateBulkActions();
+                loadNotes();
+            });
 
             document.getElementById('deselectAll').addEventListener('click', () => {
                 selectedNotes.clear();
@@ -2803,8 +2872,9 @@ function initAdminApp() {
                 }
             });
 
-            // Start the application
-            document.addEventListener('DOMContentLoaded', initAdminApp);
+            // Start the application — call directly since DOMContentLoaded
+            // already fired by the time module scripts execute
+            initAdminApp();
 
             // Add custom error handling for banned users
             window.addEventListener('unhandledrejection', (event) => {
