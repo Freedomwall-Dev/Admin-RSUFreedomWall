@@ -18,6 +18,7 @@
         "firebase/firestore": "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js",
         "firebase/auth": "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js",
         "firebase/app-check": "https://www.gstatic.com/firebasejs/9.22.0/firebase-app-check.js",
+        "firebase/app-check": "https://www.gstatic.com/firebasejs/9.22.0/firebase-app-check.js",
         "firebase/app-check": "https://www.gstatic.com/firebasejs/9.22.0/firebase-app-check.js"
       }
     }
@@ -1349,6 +1350,7 @@
         } from "firebase/auth";
         import { initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check";
         import { initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check";
+        import { initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check";
 
         // Firebase Configuration (using your existing config)
         const firebaseConfig = {
@@ -1838,6 +1840,14 @@
                 actionsDiv.appendChild(restoreBtn);
             }
 
+            if (note.isDeleted) {
+                const restoreBtn = document.createElement('button');
+                restoreBtn.className = 'btn-dark btn-small';
+                restoreBtn.innerHTML = '<i class="fas fa-undo"></i> Restore';
+                restoreBtn.addEventListener('click', () => restoreNote(note.id));
+                actionsDiv.appendChild(restoreBtn);
+            }
+
             noteElement.appendChild(actionsDiv);
 
             // ── See more / See less (after render) ──────────────────────
@@ -2205,6 +2215,17 @@
                 showToast('Failed to restore messages', 'error');
             }
         }
+
+        async function restoreNote(noteId) {
+            try {
+                await updateDoc(doc(db, 'notes', noteId), { isDeleted: false });
+                await logAdminAction('RESTORE_NOTE', `Restored note: ${noteId}`);
+                showToast('Message restored successfully', 'success');
+            } catch (error) {
+                showToast('Failed to restore message', 'error');
+            }
+        }
+
 
         async function bulkDeleteNotes() {
             if (selectedNotes.size === 0) return;
@@ -2587,27 +2608,22 @@
             openModal('banModal');
         }
 
-       // Rename your custom function
-function initAdminApp() {
-    // Auth state observer
-    onAuthStateChanged(auth, (user) => {
-        if (user && user.email === ADMIN_EMAIL) {
-            currentUser = user;
-            document.getElementById('loginContainer').style.display = 'none';
-            document.getElementById('adminContainer').style.display = 'block';
-            document.getElementById('adminEmail').textContent = user.email;
-            
-            // Load initial data
-            loadDashboardStats();
-            loadNotes();
-        } else {
-            currentUser = null;
-            document.getElementById('loginContainer').style.display = 'flex';
-            document.getElementById('adminContainer').style.display = 'none';
-        }
-    });
-}
-
+            function initAdminApp() {
+                onAuthStateChanged(auth, (user) => {
+                    if (user && user.email === ADMIN_EMAIL) {
+                        currentUser = user;
+                        document.getElementById('loginContainer').style.display = 'none';
+                        document.getElementById('adminContainer').style.display = 'block';
+                        document.getElementById('adminEmail').textContent = user.email;
+                        loadDashboardStats();
+                        loadNotes();
+                    } else {
+                        currentUser = null;
+                        document.getElementById('loginContainer').style.display = 'flex';
+                        document.getElementById('adminContainer').style.display = 'none';
+                    }
+                });
+            }
 
             // Login button
             document.getElementById('loginBtn').addEventListener('click', loginWithGoogle);
